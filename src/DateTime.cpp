@@ -83,18 +83,18 @@ bool Timer::isFinished() const {
 }
 
 std::string Timer::printDuration() const {
-	return std::format("{:%H:%M:%OS}", m_rawDuration);
+	return std::format("{:%H:%M:%S}", m_rawDuration);
 }
 
 std::string Timer::printStartTime() const {
 	using namespace std::literals;
 
-	return std::format("{:%OH:%OM:%OS}", this->getRawStartTime());
+	return std::format("{:%H:%M:%S}", this->getRawStartTime());
 }
 std::string Timer::printEndTime() const {
 	using namespace std::literals;
 
-	return std::format("{:%OH:%OM:%OS}", this->getRawEndTime());
+	return std::format("{:%H:%M:%S}", this->getRawEndTime());
 }
 
 
