@@ -131,17 +131,29 @@ bool Project::endTimer() {
 }
 
 std::ostringstream Project::printAllEntries() const {
+
 	std::ostringstream os;
 
 	if (m_timeEntries.empty()) {
 		os << "No Entries for this project.";
 	}
 	else {
-		os << " Date \t\tName\t\tTime Started\tTime Ended\tDuration \n";
-		os << "----------------------------------------------------------------\n";
+		os << std::format("{:<20}", "Date");
+		os << std::format("{:<20}", "Name");
+		os << std::format("{:<20}", "Start Time");
+		os << std::format("{:<20}", "End Time");
+		os << std::format("{:<20}", "Duration");
+
+		os << "\n" << std::format("{:-<100}", '-') << "\n";
 		for (const auto& t : m_timeEntries) {
-			os << t->printDate() << "\t" << t->getName() << "\t" << t->printStartTime() << "\t" << t->printEndTime() << "\t" << t->printDuration() << "\n";
+			os << std::format("{:<20}", t->printDate());
+			os << std::format("{:<20}", t->getName());
+			os << std::format("{:<20}", t->printStartTime(), 2);
+			os << std::format("{:<20}", t->printEndTime(), 2);
+			os << std::format("{:<20}", t->printDuration(), 2);
+			os << std::endl;
 		}
+		
 	}
 	
 	return os;
@@ -212,7 +224,6 @@ void from_json(const nlohmann::json& j, Project& p) {
 	nlohmann::json t;
 	j.at("timers").get_to(t);
 	
-	int i{ 0 };
 	for (auto& elm : t.items()) {
 		nlohmann::json obj = elm.value();
 		std::string name, start, end;

@@ -24,7 +24,7 @@ public:
 	std::string getName()					const	{ return m_name; }
 
 	bool addTimer(TimeEntry& timer);
-	bool startTimer(std::string name="");
+	bool startTimer(std::string name="Unnamed Timer");
 	bool endTimer();
 
 	friend void to_json(nlohmann::json& j, const Project& p);
