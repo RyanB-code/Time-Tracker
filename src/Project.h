@@ -38,9 +38,7 @@ public:
 	void				setName(const std::string& s);
 	std::string_view 	getName() const;
 
-	bool 		setLastUpdated(Timestamp& timestamp);
 	Timestamp 	getLastUpdated() const;
-
 
 	bool addEntry(EntryPtr entry);
 	bool removeEntry(int id);
@@ -58,6 +56,8 @@ private:
 	std::vector<EntryPtr> entries{};
 	EntryPtr runningEntry{};
 
+
+	bool 		setLastUpdated(Timestamp& timestamp);
 
 };
 

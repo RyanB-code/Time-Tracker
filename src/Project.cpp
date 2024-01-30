@@ -58,6 +58,12 @@ bool Project::addEntry(EntryPtr entry) {
 	// Only add if finished
 	if(entry->IsFinished()){
 		entries.push_back(entry);
+
+		// Updated lasUpdated time
+		Timestamp now {};
+		now.stamp();
+		setLastUpdated(now);
+
 		return true;
 	}
 	else
@@ -112,6 +118,12 @@ bool Project::removeEntry(int id){
 	for(std::vector<EntryPtr>::iterator it {entries.begin()}; it <= entries.end();){
 		if(id == it->get()->getID()){
 			entries.erase(it);
+
+			// Updated lasUpdated time
+			Timestamp now {};
+			now.stamp();
+			setLastUpdated(now);
+			
 			return true;
 		}
 	}
