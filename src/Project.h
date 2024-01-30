@@ -1,53 +1,98 @@
 #ifndef PROJECT_H
 #define PROJECT_H
 
-#include "DateTime.h"
+#include "Time.h"
 #include "json.h"
 
 #include <algorithm>
 #include <sstream>
 #include <fstream>
 
+class ProjectEntry : public Timer {
+public:
+	ProjectEntry(const std::string& s = "New Timer");
+	virtual ~ProjectEntry();
+
+	std::string_view 	getName() const;
+	void 				setName(const std::string& s);
+
+	int					getID() const;
+
+private:
+	std::string name{};
+	int id{};
+
+	int setID();
+};
+
+using EntryPtr = std::shared_ptr<ProjectEntry>;
+
+
+
 class Project
 {
 public:
-	Project(std::string name = "New Project") : m_name{ name } { }
+	Project(const std::string& s = "New Project");
 	~Project();
 
-	Project(Project&& other);
-	Project& operator=(Project&& p) noexcept;
+	void				setName(const std::string& s);
+	std::string_view 	getName() const;
+
+	bool 		setLastUpdated(Timestamp& timestamp);
+	Timestamp 	getLastUpdated() const;
 
 
-	bool setLastUpdated(Timestamp& timestamp);
-
-	void		setName(std::string name)			{ m_name = name; }
-	std::string getName()					const	{ return m_name; }
-
-	bool addTimer(TimeEntry& timer);
-	bool startTimer(std::string name="Unnamed Timer");
+	bool addEntry(EntryPtr entry);
+	bool removeEntry(int id);
+	bool startTimer(std::string name="Unnamed Entry");
 	bool endTimer();
-
-	friend void to_json(nlohmann::json& j, const Project& p);
-	friend void from_json(const nlohmann::json& j, Project& p);
 
 	std::ostringstream	printAllEntries() const;
 	std::string			printTotalTime() const;
 
 private:
-	std::string m_name;
+	std::string name{};
 
-	TimeEntry* m_currentTimer{nullptr};
-	Timestamp m_lastUpdated{};
+	Timestamp 			lastUpdated{};
 
-	std::vector<std::unique_ptr<TimeEntry>> m_timeEntries{};
+	std::vector<EntryPtr> entries{};
+	EntryPtr runningEntry{};
+
 
 };
 
 
-// Helper Functions
-namespace ProjectHelper {
-	bool createProjectFromFile(const std::string& file, Project& p);
-}
-
 
 #endif
+
+/*
+****** MAY NEED FOR FILE I/O *****************
+Project& Project::operator=(Project&& old) noexcept {
+	if (this != &old) {
+		for (auto& timeEntry : old.m_timeEntries) {
+			m_timeEntries.push_back(std::move(timeEntry));
+		}
+		delete m_currentTimer;
+
+		m_name = old.m_name;
+		m_currentTimer = old.m_currentTimer;
+
+		old.m_name = "";
+		old.m_currentTimer = nullptr;
+		old.m_timeEntries.clear();
+
+		return *this;
+	}
+}
+Project::Project(Project&& other) : m_name{ "" } {
+	m_name = other.m_name;
+	m_currentTimer = other.m_currentTimer;
+	for (auto& timeEntry : m_timeEntries) {
+		other.m_timeEntries.push_back(std::move(timeEntry));
+		timeEntry.release();
+	}
+	other.m_name = "";
+	other.m_currentTimer = nullptr;
+	other.m_timeEntries.clear();
+}
+*/
