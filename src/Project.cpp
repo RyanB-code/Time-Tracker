@@ -115,7 +115,7 @@ bool Project::addEntry(EntryPtr entry) {
 }
 bool Project::removeEntry(int id){
 	// Linear search. erase if IDs are the same
-	for(std::vector<EntryPtr>::iterator it {entries.begin()}; it <= entries.end();){
+	for(std::vector<EntryPtr>::iterator it {entries.begin()}; it < entries.end(); ++it){
 		if(id == it->get()->getID()){
 			entries.erase(it);
 
@@ -123,7 +123,7 @@ bool Project::removeEntry(int id){
 			Timestamp now {};
 			now.stamp();
 			setLastUpdated(now);
-			
+
 			return true;
 		}
 	}
