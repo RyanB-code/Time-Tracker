@@ -1,56 +1,69 @@
 #include "Project.h"
 
+ProjectEntry::ProjectEntry(const std::string& s) : name{s} {
+	setID();
+}
+ProjectEntry::~ProjectEntry(){
+
+}
+std::string_view ProjectEntry::getName() const{
+	return name;
+}
+void ProjectEntry::setName(const std::string& s){
+	name = s;
+}
+int ProjectEntry::getID() const {
+	return id;
+}
+int ProjectEntry::setID(){
+	static int idEntries{0};
+	++idEntries;
+	id = idEntries;
+	return idEntries;
+}
+
+
+
+
+Project::Project(const std::string& s) : name{ s } {
+	runningEntry.reset();
+}
 
 Project::~Project() {
-	delete m_currentTimer;
-	for (auto& timeEntry : m_timeEntries) {
-		timeEntry.release();
-	}
-	m_timeEntries.clear();
-}
-Project& Project::operator=(Project&& old) noexcept {
-	if (this != &old) {
-		for (auto& timeEntry : old.m_timeEntries) {
-			m_timeEntries.push_back(std::move(timeEntry));
-		}
-		delete m_currentTimer;
-
-		m_name = old.m_name;
-		m_currentTimer = old.m_currentTimer;
-
-		old.m_name = "";
-		old.m_currentTimer = nullptr;
-		old.m_timeEntries.clear();
-
-		return *this;
-	}
-}
-Project::Project(Project&& other) : m_name{ "" } {
-	m_name = other.m_name;
-	m_currentTimer = other.m_currentTimer;
-	for (auto& timeEntry : m_timeEntries) {
-		other.m_timeEntries.push_back(std::move(timeEntry));
-		timeEntry.release();
-	}
-	other.m_name = "";
-	other.m_currentTimer = nullptr;
-	other.m_timeEntries.clear();
+	entries.clear();
 }
 
+void Project::setName(const std::string& s){
+	name = s;
+}
+std::string_view Project::getName() const{
+	return name;
+}
 
 bool Project::setLastUpdated(Timestamp& timestamp) {
-	if (timestamp.isStamped()) {
-		m_lastUpdated = timestamp;
+	if (timestamp.IsStamped()) {
+		lastUpdated = timestamp;
 		return true;
 	}
 	else
 		return false;
 }
+Timestamp Project::getLastUpdated() const {
+	return lastUpdated;
+}
 
 
-bool Project::addTimer(TimeEntry& t) {
-	// If the timer is running, add it to the list of timers
-	if (t.isRunning()) 
+bool Project::addEntry(EntryPtr entry) {
+
+	// Only add if finished
+	if(entry->IsFinished()){
+		entries.push_back(entry);
+		return true;
+	}
+	else
+		return false;
+	/* If the timer is running, add it to the list of timers
+	if (entry->IsRunning()) 
 	{
 		if (!m_currentTimer) {
 			m_timeEntries.push_back(std::make_unique<TimeEntry>(t));
@@ -67,6 +80,9 @@ bool Project::addTimer(TimeEntry& t) {
 	}
 	else if (t.isFinished()) {
 		m_timeEntries.push_back(std::make_unique<TimeEntry>(t));
+
+
+
 
 		// SORTING
 		//if (m_timeEntries.size() == 1 || t.getRawStartTime() > m_timeEntries[m_timeEntries.size() - 2].getRawStartTime()) {} // Does nothing if no need to sort
@@ -89,52 +105,60 @@ bool Project::addTimer(TimeEntry& t) {
 	}
 	else
 		return false;
+		*/
+}
+bool Project::removeEntry(int id){
+	// Linear search. erase if IDs are the same
+	for(std::vector<EntryPtr>::iterator it {entries.begin()}; it <= entries.end();){
+		if(id == it->get()->getID()){
+			entries.erase(it);
+			return true;
+		}
+	}
+	return false;
 }
 
 bool Project::startTimer(std::string name) {
 
-	// Create a new timer using name parameter and pass it to member variable
-	if (!m_currentTimer) {
-		auto t = std::make_unique<TimeEntry>(name);
-		t->start();
-
-		addTimer(*t);
+	if (!runningEntry) {
+		ProjectEntry newTimer(name);
+		newTimer.start();
+		runningEntry = std::make_shared<ProjectEntry>(std::move(newTimer));
+		
 		return true;
 	}
 	else
-	{
 		return false;
-	}
 
 	return false;
 }
 bool Project::endTimer() {
-	bool returnVal{ false };
 
 	// If there is no timer tracked, return false
-	if (!m_currentTimer) {
-		returnVal = false;
+	if (!runningEntry) {
+		return false;
 	}
 	else {
-		// If a timer has been found, and it was successfully stopped, add to list of m_TimeEntries and reset tracker
-		if (m_currentTimer->end()) {
-			m_currentTimer = nullptr;
-			returnVal = true;
+		// If a timer has been found, and it was successfully stopped, add to list of entries and reset tracker
+		if (runningEntry->end()) {
+			addEntry(runningEntry);
+			runningEntry.reset();
+			return true;
 		}
 		else {
 			// If the timer could not be stopped, return false;
-			returnVal = false;
+			return false;
 		}
 	}
 
-	return returnVal;
+	return false;
 }
 
 std::ostringstream Project::printAllEntries() const {
 
 	std::ostringstream os;
 
-	if (m_timeEntries.empty()) {
+	if (entries.empty()) {
 		os << "No Entries for this project.";
 	}
 	else {
@@ -145,7 +169,7 @@ std::ostringstream Project::printAllEntries() const {
 		os << std::format("{:<20}", "Duration");
 
 		os << "\n" << std::format("{:-<100}", '-') << "\n";
-		for (const auto& t : m_timeEntries) {
+		for (const auto& t : entries) {
 			os << std::format("{:<20}", t->printDate());
 			os << std::format("{:<20}", t->getName());
 			os << std::format("{:<20}", t->printStartTime(), 2);
@@ -163,24 +187,23 @@ std::string	Project::printTotalTime() const {
 	std::chrono::system_clock::duration totalTime{};
 
 
-	if (m_timeEntries.size() < 1) {
+	if (entries.empty()) {
 		return "00:00:00";
 	}
-	else if (m_timeEntries.size() == 1) {
-		return m_timeEntries[0]->printDuration();
+	else if (entries.size() == 1) {
+		return entries[0]->printDuration();
 	}
 	else {
-
-		for (const auto& t : m_timeEntries) {
+		// Sum of all durations in entries
+		for (const auto& t : entries) {
 			totalTime = totalTime + t->getRawDuration();
 		}
 	}
-
-	return std::format("{:%H:%M:%OS}", totalTime);
+	return std::format("{:%H:%M:%S}", totalTime);
 }
 
 
-
+/*
 void to_json(nlohmann::json& j, const Project& p) {
 
 	j = nlohmann::json{
@@ -258,3 +281,4 @@ bool ProjectHelper::createProjectFromFile(const std::string& file, Project& p) {
 
 	return false;
 }
+*/
