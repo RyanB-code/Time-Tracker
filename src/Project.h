@@ -42,6 +42,8 @@ public:
 
 	bool addEntry(EntryPtr entry);
 	bool removeEntry(int id);
+	const std::vector<EntryPtr>& getEntries() const;
+
 	bool startTimer(std::string name="Unnamed Entry");
 	bool endTimer();
 
@@ -51,13 +53,12 @@ public:
 private:
 	std::string name{};
 
-	Timestamp 			lastUpdated{};
+	Timestamp lastUpdated{};
 
 	std::vector<EntryPtr> entries{};
 	EntryPtr runningEntry{};
 
-
-	bool 		setLastUpdated(Timestamp& timestamp);
+	bool setLastUpdated(Timestamp& timestamp);
 
 };
 
