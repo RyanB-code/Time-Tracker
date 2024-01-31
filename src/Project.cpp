@@ -129,6 +129,10 @@ bool Project::removeEntry(int id){
 	}
 	return false;
 }
+const std::vector<EntryPtr>& Project::getEntries() const{
+	return entries;
+}
+
 
 bool Project::startTimer(std::string name) {
 
