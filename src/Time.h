@@ -31,9 +31,14 @@ public:
 	timepoint	getRawTime()	const;
 	ymd			getRawYMD()		const;
 
+	static int 	getHourOffset();
+	static void setHourOffset(int offset);
+
 private:
 	timepoint time{};
 	bool m_isStamped{ false };
+
+	static inline int hourOffset{0};
 };
 
 

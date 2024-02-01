@@ -24,14 +24,13 @@ bool JsonFormat::write(std::string path, const Project& project){
 
 	int i{ 0 };
 	nlohmann::json entries = nlohmann::json::array();
-
 	for (const auto& t : project.getEntries()) {
 		std::ostringstream s1; s1 << t->getRawStartTime();
 		std::ostringstream s2; s2 << t->getRawEndTime();
 
-		if (t->getName() == "") {
+		if (t->getName() == "Unnamed Entry") {
 			std::ostringstream name;
-			name << "Entry " << i;
+			name << "Entry " << t->getID();
 
 			entries.push_back({ name.str(), s1.str(), s2.str() } );
 		}
@@ -57,8 +56,6 @@ Project JsonFormat::read(std::string path){
     std::ifstream inputFile{ path, std::ios::in };
     json j = json::parse(inputFile);
   
-    std::cout << "JSON HERE\n\n" << std::setw(1) << std::setfill('\t') << j;
-
     std::string nameBuf, lastUpdatedBuf;
     j.at("name").get_to(nameBuf);
 	j.at("updated").get_to(lastUpdatedBuf);
@@ -94,7 +91,8 @@ namespace FileIO{
     std::chrono::system_clock::time_point stringToTimepoint(const std::string& time) {
         std::stringstream ss{ time };
         std::tm _tm{};
-        ss >> std::get_time(&_tm, "%Y-%m-%d %H:%M:%S");
+		_tm.tm_isdst = 0;
+       	ss >> std::get_time(&_tm, "%Y-%m-%d%n%H:%M:%S");
 	    return std::chrono::system_clock::from_time_t(std::mktime(&_tm));
     }
 }

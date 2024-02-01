@@ -1,7 +1,7 @@
 #include "Time.h"
 
 Timestamp::Timestamp(){
-
+	
 }
 Timestamp::Timestamp(const timepoint& timestamp) {
 	stamp(timestamp);
@@ -10,9 +10,9 @@ Timestamp::~Timestamp(){
 
 }
 
-bool Timestamp::stamp(const timepoint& timepoint) {
+bool Timestamp::stamp(const timepoint& timepoint) {	
 	if (!m_isStamped) {
-		time = timepoint;
+		time = timepoint + std::chrono::hours(hourOffset);
 		m_isStamped = true;
 		return true;
 	}
@@ -49,6 +49,13 @@ timepoint Timestamp::getRawTime() const {
 ymd	Timestamp::getRawYMD() const {
 	std::chrono::year_month_day ymd{ std::chrono::floor<std::chrono::days>(time) };
 	return ymd;
+}
+int Timestamp::getHourOffset(){
+	return hourOffset;
+}
+void Timestamp::setHourOffset(int offset){
+	hourOffset = offset;
+	return;
 }
 
 
