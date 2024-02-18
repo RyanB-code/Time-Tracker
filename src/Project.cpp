@@ -219,6 +219,49 @@ std::string	Project::printTotalTime() const {
 }
 
 
+
+ProjectManager::ProjectManager(){
+
+}
+ProjectManager::~ProjectManager(){
+
+}
+bool ProjectManager::selectProject(std::string name){
+	try{
+		selectedProject = projects.at(name);
+		return true;
+	}
+	catch (std::out_of_range){
+		selectedProject.reset();
+		return false;
+	}
+	return false;
+}
+void ProjectManager::deselectProject() {
+	selectedProject.reset();
+}
+bool ProjectManager::addProject(ProjectPtr project){
+	if(projects.contains( std::string{project->getName()} )){
+		return false;
+	}
+	else{
+		projects.try_emplace(std::string{project->getName()}, project);
+		return true;
+	}
+	return false;
+}
+
+bool ProjectManager::deleteProject(std::string name){
+	if(projects.contains(name)){
+		projects.erase(projects.find(name));
+		return true;
+	}
+	else
+		return false;
+}
+
+
+
 /*
 void to_json(nlohmann::json& j, const Project& p) {
 

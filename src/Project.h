@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <sstream>
 #include <fstream>
+#include <map>
 
 class ProjectEntry : public Timer {
 public:
@@ -62,38 +63,24 @@ private:
 
 };
 
+using ProjectPtr = std::shared_ptr<Project>;
 
+class ProjectManager{
+public:
+	ProjectManager();
+	~ProjectManager();
+
+	bool selectProject(std::string name);
+	void deselectProject();
+
+	bool addProject(ProjectPtr project);
+	bool deleteProject(std::string name);
+
+private:
+
+	std::map<std::string, ProjectPtr> 	projects;
+	std::weak_ptr<Project> 				selectedProject;
+
+};
 
 #endif
-
-/*
-****** MAY NEED FOR FILE I/O *****************
-Project& Project::operator=(Project&& old) noexcept {
-	if (this != &old) {
-		for (auto& timeEntry : old.m_timeEntries) {
-			m_timeEntries.push_back(std::move(timeEntry));
-		}
-		delete m_currentTimer;
-
-		m_name = old.m_name;
-		m_currentTimer = old.m_currentTimer;
-
-		old.m_name = "";
-		old.m_currentTimer = nullptr;
-		old.m_timeEntries.clear();
-
-		return *this;
-	}
-}
-Project::Project(Project&& other) : m_name{ "" } {
-	m_name = other.m_name;
-	m_currentTimer = other.m_currentTimer;
-	for (auto& timeEntry : m_timeEntries) {
-		other.m_timeEntries.push_back(std::move(timeEntry));
-		timeEntry.release();
-	}
-	other.m_name = "";
-	other.m_currentTimer = nullptr;
-	other.m_timeEntries.clear();
-}
-*/
