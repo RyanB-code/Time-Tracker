@@ -226,12 +226,27 @@ ProjectManager::ProjectManager(){
 ProjectManager::~ProjectManager(){
 
 }
+ProjectPtr ProjectManager::getProject(){
+	if(ProjectPtr proj = selectedProject.lock()){
+		return proj;
+	}
+	else{
+		return nullptr;
+	}
+}
+std::vector<std::string> ProjectManager::getAllProjectNames() const{
+	std::vector<std::string> names;
+	for(auto i{projects.begin()}; i != projects.end(); ++i){
+		names.push_back(i->first);
+	}
+	return names;
+}
 bool ProjectManager::selectProject(std::string name){
 	try{
 		selectedProject = projects.at(name);
 		return true;
 	}
-	catch (std::out_of_range){
+	catch (std::out_of_range& e){
 		selectedProject.reset();
 		return false;
 	}
