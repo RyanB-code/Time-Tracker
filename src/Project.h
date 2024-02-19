@@ -70,6 +70,9 @@ public:
 	ProjectManager();
 	~ProjectManager();
 
+	ProjectPtr getProject();
+	std::vector<std::string> getAllProjectNames() const;
+
 	bool selectProject(std::string name);
 	void deselectProject();
 
