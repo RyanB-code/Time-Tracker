@@ -51,6 +51,13 @@ bool Project::setLastUpdated(Timestamp& timestamp) {
 Timestamp Project::getLastUpdated() const {
 	return lastUpdated;
 }
+bool Project::isTimerRunning() const{
+	if(runningEntry){
+		return runningEntry->IsRunning();
+	}
+	else
+		return false;
+}
 
 
 bool Project::addEntry(EntryPtr entry) {
@@ -175,7 +182,7 @@ std::ostringstream Project::printAllEntries() const {
 	std::ostringstream os;
 
 	if (entries.empty()) {
-		os << "No Entries for this project.";
+		os << "There are no entries for this project.\n";
 	}
 	else {
 		os << std::format("{:<20}", "Date");
@@ -241,6 +248,15 @@ std::vector<std::string> ProjectManager::getAllProjectNames() const{
 	}
 	return names;
 }
+ProjectPtr ProjectManager::findProject(std::string name) const{
+	try{
+		return projects.at(name);
+	}
+	catch (std::out_of_range& e){
+		return nullptr;
+	}
+	return nullptr;
+}
 bool ProjectManager::selectProject(std::string name){
 	try{
 		selectedProject = projects.at(name);
@@ -274,85 +290,3 @@ bool ProjectManager::deleteProject(std::string name){
 	else
 		return false;
 }
-
-
-
-/*
-void to_json(nlohmann::json& j, const Project& p) {
-
-	j = nlohmann::json{
-		{"name", p.getName()},
-		{"updated", p.m_lastUpdated.print()}
-	};
-
-	int i{ 0 };
-	nlohmann::json timers = nlohmann::json::array();
-
-	for (const auto& t : p.m_timeEntries) {
-		std::ostringstream s1; s1 << t->getRawStartTime();
-		std::ostringstream s2; s2 << t->getRawEndTime();
-
-		if (t->getName() == "") {
-			std::ostringstream name;
-			name << "Timer " << i;
-
-			timers.push_back({ name.str(), s1.str(), s2.str() } );
-		}
-		else
-			timers.push_back({ t->getName(), s1.str(), s2.str()});
-
-		++i;
-	}
-
-	j["timers"] = timers;
-}
-
-void from_json(const nlohmann::json& j, Project& p) {
-	std::string nameBuf, lastUpdatedBuf;
-	
-	j.at("name").get_to(nameBuf);
-	j.at("updated").get_to(lastUpdatedBuf);
-
-	Timestamp timestamp{ DateTimeHelper::stringToTimepoint(lastUpdatedBuf) };
-	p.setLastUpdated(timestamp);
-
-	p.setName(nameBuf);
-
-	nlohmann::json t;
-	j.at("timers").get_to(t);
-	
-	for (auto& elm : t.items()) {
-		nlohmann::json obj = elm.value();
-		std::string name, start, end;
-
-		obj.at(0).get_to(name);
-		obj.at(1).get_to(start);
-		obj.at(2).get_to(end);
-
-		TimeEntry t{ name };
-
-		t.start(DateTimeHelper::stringToTimepoint(start));
-		t.end(DateTimeHelper::stringToTimepoint(end));
-
-		p.addTimer(t);
-	}
-}
-
-
-bool ProjectHelper::createProjectFromFile(const std::string& file, Project& p) {
-	std::ifstream inputFile{ std::filesystem::path{ file }, std::ios::in };
-
-	try {
-		nlohmann::json j{ nlohmann::json::parse(inputFile) };
-
-		p = j.template get<Project>();
-
-		return true;
-	}
-	catch (...) {
-		return false;
-	}
-
-	return false;
-}
-*/
