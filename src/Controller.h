@@ -1,12 +1,26 @@
 #include "Project.h"
 #include "FileIO.h"
 #include <sstream>
+#include <format>
 
-class Command;
+class Command{
+public:
+    Command(std::string text);
+    ~Command();
+
+    virtual bool execute(std::string arg="") = 0;
+    std::string getCommand() const;
+    std::string getDescription() const;
+private:
+    std::string command { };
+protected:
+    std::string description { };
+};
+
 
 class EventHandler{
 public:
-    EventHandler(std::shared_ptr<ProjectManager> manager, std::shared_ptr<ProjectFormatter> format);
+    EventHandler(std::shared_ptr<ProjectManager> manager, std::shared_ptr<ProjectFormatter> format, int hourOffset=0);
     ~EventHandler();
 
     bool run();
@@ -20,20 +34,6 @@ private:
     bool setup();
     void handleArguments(std::vector<std::string>& args);
 };
-
-
-class Command{
-public:
-    Command(std::string text);
-    ~Command();
-
-    virtual bool execute(std::string arg="") = 0;
-    std::string getCommand();
-private:
-    std::string command { };
-};
-
-
 
 
 class ProjectCommand : public Command{
@@ -68,7 +68,42 @@ public:
 
     bool execute(std::string arg="") override; 
 };
+class CreateProject : public ProjectCommand{
+public:
+    CreateProject(std::string command, std::weak_ptr<ProjectManager> manager);
 
+    bool execute(std::string arg="") override; 
+};
+class DeleteProject : public ProjectCommand{
+public:
+    DeleteProject(std::string command, std::weak_ptr<ProjectManager> manager);
+
+    bool execute(std::string arg="") override; 
+};
+class StartTimer : public ProjectCommand{
+public:
+    StartTimer(std::string command, std::weak_ptr<ProjectManager> manager);
+
+    bool execute(std::string arg="") override; 
+};
+class EndTimer : public ProjectCommand{
+public:
+    EndTimer(std::string command, std::weak_ptr<ProjectManager> manager);
+
+    bool execute(std::string arg="") override; 
+};
+class IsRunning : public ProjectCommand{
+public:
+    IsRunning(std::string command, std::weak_ptr<ProjectManager> manager);
+
+    bool execute(std::string arg="") override; 
+};
+class TotalTime : public ProjectCommand{
+public:
+    TotalTime(std::string command, std::weak_ptr<ProjectManager> manager);
+
+    bool execute(std::string arg="") override; 
+};
 
 
 class FileIOCommand : public Command {
