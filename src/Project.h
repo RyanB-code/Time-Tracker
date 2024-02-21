@@ -40,6 +40,7 @@ public:
 	std::string_view 	getName() const;
 
 	Timestamp 	getLastUpdated() const;
+	bool isTimerRunning() const;
 
 	bool addEntry(EntryPtr entry);
 	bool removeEntry(int id);
@@ -72,6 +73,7 @@ public:
 
 	ProjectPtr getProject();
 	std::vector<std::string> getAllProjectNames() const;
+	ProjectPtr findProject(std::string name) const;
 
 	bool selectProject(std::string name);
 	void deselectProject();
