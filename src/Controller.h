@@ -18,10 +18,10 @@ protected:
 };
 
 
-class EventHandler{
+class Framework{
 public:
-    EventHandler(std::shared_ptr<ProjectManager> manager, std::shared_ptr<ProjectFormatter> format, int hourOffset=0);
-    ~EventHandler();
+    Framework(std::shared_ptr<ProjectManager> manager1, std::shared_ptr<FileIOManager> manager2, int hourOffset=0);
+    ~Framework();
 
     bool run();
     bool addCommand(std::unique_ptr<Command> command);
@@ -29,7 +29,7 @@ public:
 private:
     std::unordered_map<std::string, std::unique_ptr<Command>> commands;
     std::shared_ptr<ProjectManager>     projectManager;
-    std::shared_ptr<ProjectFormatter>   saveFormat;
+    std::shared_ptr<FileIOManager>      fileManager;
 
     bool setup();
     void handleArguments(std::vector<std::string>& args);
@@ -108,17 +108,24 @@ public:
 
 class FileIOCommand : public Command {
 public:
-    std::weak_ptr<ProjectFormatter> saveFormat;
+    std::weak_ptr<FileIOManager> fileManager;
 
-    FileIOCommand(std::string command, std::weak_ptr<ProjectFormatter> format);
+    FileIOCommand(std::string command, std::weak_ptr<FileIOManager> manager);
     ~FileIOCommand();
 };
 
-class ReadFile : public FileIOCommand {
+class SaveAllProjects : public FileIOCommand {
 public:
     std::weak_ptr<ProjectManager> projectManager;
 
-    ReadFile(std::string command, std::weak_ptr<ProjectFormatter> format, std::weak_ptr<ProjectManager> manager);
+    SaveAllProjects(std::string command, std::weak_ptr<FileIOManager> fileManager, std::weak_ptr<ProjectManager> projectManager);
+    
+    bool execute(std::string arg="") override;
+};
+
+class PrintFileIODirectory : public FileIOCommand {
+public:
+    PrintFileIODirectory(std::string command, std::weak_ptr<FileIOManager> fileManager);
     
     bool execute(std::string arg="") override;
 };
