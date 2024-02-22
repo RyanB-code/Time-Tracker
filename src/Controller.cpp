@@ -16,15 +16,15 @@ std::string Command::getDescription() const{
     return description;
 }
 
-EventHandler::EventHandler(std::shared_ptr<ProjectManager> manager, std::shared_ptr<ProjectFormatter> format, int hourOffset)
-    : projectManager{manager}, saveFormat{format}
+Framework::Framework(std::shared_ptr<ProjectManager> manager1, std::shared_ptr<FileIOManager> manager2, int hourOffset)
+    : projectManager{manager1}, fileManager{manager2}
 {
     Timestamp::setHourOffset(hourOffset);
 }
-EventHandler::~EventHandler(){
+Framework::~Framework(){
     
 }
-bool EventHandler::run(){
+bool Framework::run(){
     setup();
 
     bool exit {false};
@@ -58,7 +58,7 @@ bool EventHandler::run(){
 
     return true;
 }
-bool EventHandler::addCommand(std::unique_ptr<Command> command){
+bool Framework::addCommand(std::unique_ptr<Command> command){
     if(commands.contains(command->getCommand())){
         return false;
     }
@@ -68,24 +68,34 @@ bool EventHandler::addCommand(std::unique_ptr<Command> command){
     }
     return false;
 }
-bool EventHandler::setup(){
-    std::unique_ptr<DeselectProject>    deselectProject { new DeselectProject{"deselect", projectManager}};
-    std::unique_ptr<SelectProject>      selectProject   { new SelectProject{"select", projectManager}};
-    std::unique_ptr<ListProjects>       listProjects    { new ListProjects{"list", projectManager}};
-    std::unique_ptr<ReadFile>           readFile        { new ReadFile{"read", saveFormat, projectManager} };
-    std::unique_ptr<ListEntries>        listEntries     { new ListEntries("list-entries", projectManager)};
-    std::unique_ptr<CreateProject>      createProject   { new CreateProject("create", projectManager)};
-    std::unique_ptr<DeleteProject>      deleteProject   { new DeleteProject("delete", projectManager)};
-    std::unique_ptr<StartTimer>         startTimer      { new StartTimer("start", projectManager)};
-    std::unique_ptr<EndTimer>           endTimer        { new EndTimer("end", projectManager)};
-    std::unique_ptr<TotalTime>          totalTime       { new TotalTime("total-time", projectManager)};
-    std::unique_ptr<IsRunning>          isRunning       { new IsRunning("is-running", projectManager)};
+bool Framework::setup(){
 
+    // Iterate through directory and populate project manager
+    std::vector<ProjectPtr> projectBuffer { fileManager->readDirectory()};
+    if(!projectBuffer.empty()){
+        for(auto& proj : projectBuffer){
+            projectManager->addProject(proj);
+        }
+    }
+
+
+    // Add commands
+    std::unique_ptr<DeselectProject>        deselectProject { new DeselectProject{"deselect", projectManager}};
+    std::unique_ptr<SelectProject>          selectProject   { new SelectProject{"select", projectManager}};
+    std::unique_ptr<ListProjects>           listProjects    { new ListProjects{"list", projectManager}};
+    std::unique_ptr<ListEntries>            listEntries     { new ListEntries("list-entries", projectManager)};
+    std::unique_ptr<CreateProject>          createProject   { new CreateProject("create", projectManager)};
+    std::unique_ptr<DeleteProject>          deleteProject   { new DeleteProject("delete", projectManager)};
+    std::unique_ptr<StartTimer>             startTimer      { new StartTimer("start", projectManager)};
+    std::unique_ptr<EndTimer>               endTimer        { new EndTimer("end", projectManager)};
+    std::unique_ptr<TotalTime>              totalTime       { new TotalTime("total-time", projectManager)};
+    std::unique_ptr<IsRunning>              isRunning       { new IsRunning("is-running", projectManager)};
+    std::unique_ptr<SaveAllProjects>        saveAllProjects { new SaveAllProjects("save-all", fileManager, projectManager)};
+    std::unique_ptr<PrintFileIODirectory>   printDirectory  { new PrintFileIODirectory("print-file-directory", fileManager)};
 
     addCommand(std::move(deselectProject));
     addCommand(std::move(selectProject));
     addCommand(std::move(listProjects));
-    addCommand(std::move(readFile));
     addCommand(std::move(listEntries));
     addCommand(std::move(createProject));
     addCommand(std::move(deleteProject));
@@ -93,10 +103,13 @@ bool EventHandler::setup(){
     addCommand(std::move(endTimer));
     addCommand(std::move(totalTime));
     addCommand(std::move(isRunning));
+    addCommand(std::move(saveAllProjects));
+    addCommand(std::move(printDirectory));
+
 
     return true;
 }
-void EventHandler::handleArguments(std::vector<std::string>& args){
+void Framework::handleArguments(std::vector<std::string>& args){
     // Ensure not empty
     if(args.empty()){
         return;
@@ -283,9 +296,20 @@ bool StartTimer::execute(std::string arg){
     if(std::shared_ptr<ProjectManager> manager = projectManager.lock() ){
         if(manager->getProject()){
             if(arg.empty())
-                return manager->getProject()->startTimer();
-            else
-                return manager->getProject()->startTimer(arg);
+                if(!manager->getProject()->startTimer()){
+                    std::cout << "\tCould not start timer. There may be a timer already running.\n";
+                    return false;
+                }
+                else
+                    return true;
+            else{
+                if(!manager->getProject()->startTimer(arg)){
+                     std::cout << "\tCould not start timer. There may be a timer already running.\n";
+                    return false;
+                }
+                else
+                    return true;
+            }
         }
         else{
             std::cout << "\tThere is no project selected.\n";
@@ -377,8 +401,8 @@ bool TotalTime::execute(std::string arg){
 
 
 
-FileIOCommand::FileIOCommand(std::string command, std::weak_ptr<ProjectFormatter> format)
-    : Command {command}, saveFormat{format}
+FileIOCommand::FileIOCommand(std::string command, std::weak_ptr<FileIOManager> manager)
+    : Command {command}, fileManager{manager}
 {
 
 }
@@ -386,28 +410,39 @@ FileIOCommand::~FileIOCommand(){
 
 }
 
-ReadFile::ReadFile(std::string command, std::weak_ptr<ProjectFormatter> format, std::weak_ptr<ProjectManager> manager)
-    :   FileIOCommand(command, format), projectManager{manager}
+SaveAllProjects::SaveAllProjects(std::string command, std::weak_ptr<FileIOManager> fileManager, std::weak_ptr<ProjectManager> projectManager)
+    :   FileIOCommand(command, fileManager), projectManager{projectManager}
 {
-    this->description = "Reads a specific file for project information and adds to tracked projects.\n";
+    this->description = "Saves all projects to the specific working directory.\n";
 }
-bool ReadFile::execute(std::string arg){
-    if(std::shared_ptr<ProjectFormatter> format = saveFormat.lock()){
+bool SaveAllProjects::execute(std::string arg){
+    if(std::shared_ptr<FileIOManager> _fileManager = fileManager.lock()){
     
-        if( std::shared_ptr<ProjectManager> manager = projectManager.lock()){
+        if(std::shared_ptr<ProjectManager> _projectManager = projectManager.lock()){
 
-            if(std::filesystem::exists(arg)){
-                ProjectPtr projBuffer { new Project {format->read(arg)}};
-                return manager->addProject(projBuffer);
-            }
-            else{
-                std::cout << "\tThe file \"" << arg << "\" could not be found.\n";
-                return false;
+            std::vector<std::shared_ptr<const Project>> projectsBuffer {_projectManager->getAllProjects()};
+            for(auto proj : projectsBuffer ){
+                const Project& projectBuffer { *proj.get()};
+                _fileManager->writeProject(projectBuffer);
             }
         }
     }
     else
         return false;
 
+    return false;
+}
+PrintFileIODirectory::PrintFileIODirectory(std::string command, std::weak_ptr<FileIOManager> fileManager)
+    :   FileIOCommand(command, fileManager)
+{
+    this->description = "Saves all projects to the specific working directory.\n";
+}
+bool PrintFileIODirectory::execute(std::string arg){
+    if(std::shared_ptr<FileIOManager> manager = fileManager.lock()){
+        std::cout << "\tFile IO Dreictory is \"" << manager->getDirectory() << "\"\n"; 
+    }
+    else
+        return false;
+    
     return false;
 }
