@@ -248,6 +248,14 @@ std::vector<std::string> ProjectManager::getAllProjectNames() const{
 	}
 	return names;
 }
+std::vector<std::shared_ptr<const Project>> ProjectManager::getAllProjects() const{
+	std::vector<std::shared_ptr<const Project>> projectBuffer;
+	for(auto i{projects.begin()}; i != projects.end(); ++i){
+		projectBuffer.push_back(i->second);
+	}
+	return projectBuffer;
+}
+
 ProjectPtr ProjectManager::findProject(std::string name) const{
 	try{
 		return projects.at(name);

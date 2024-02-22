@@ -72,14 +72,17 @@ public:
 	~ProjectManager();
 
 	ProjectPtr getProject();
-	std::vector<std::string> getAllProjectNames() const;
 	ProjectPtr findProject(std::string name) const;
+
+	std::vector<std::string> getAllProjectNames() const;
+	std::vector<std::shared_ptr<const Project>> getAllProjects() const;
 
 	bool selectProject(std::string name);
 	void deselectProject();
 
 	bool addProject(ProjectPtr project);
 	bool deleteProject(std::string name);
+
 
 private:
 
