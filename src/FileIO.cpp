@@ -16,7 +16,7 @@ JsonFormat::JsonFormat(){
 JsonFormat::~JsonFormat(){
 
 }
-bool JsonFormat::write(std::string path, const Project& project){
+bool JsonFormat::write(std::string path, const Project& project) const{
     json j{
 		{"name", project.getName()},
 		{"updated", project.getLastUpdated().printRaw()}
@@ -50,7 +50,7 @@ bool JsonFormat::write(std::string path, const Project& project){
     return false;
 }
 
-Project JsonFormat::read(std::string path){
+Project JsonFormat::read(std::string path) const{
     Project project;
 
     std::ifstream inputFile{ path, std::ios::in };
@@ -86,6 +86,92 @@ Project JsonFormat::read(std::string path){
 
     return project;
 }
+
+
+
+FileIOManager::FileIOManager(std::shared_ptr<ProjectFormatter> format)
+	: saveFormat { format }
+{
+}
+FileIOManager::~FileIOManager(){
+
+}
+ProjectPtr FileIOManager::readFile(std::string path) const{
+	if(!std::filesystem::exists(path))
+		return nullptr;
+
+	if(saveFormat){ 
+		ProjectPtr projBuffer { new Project {saveFormat->read(path)}};
+		return projBuffer;
+    }
+    else
+        return nullptr;
+
+    return nullptr;
+}
+std::vector<ProjectPtr> FileIOManager::readDirectory (std::string directory) const{
+	if(directory.empty()){
+		directory = saveDirectory;
+	}
+	else{
+		if(!std::filesystem::exists(directory))
+			return std::vector<ProjectPtr>{};		// Should find better way to signal the directory is bad 
+	}
+
+	std::vector<ProjectPtr> projects;
+	const std::filesystem::path workingDirectory{directory};
+	for(auto const& dir_entry : std::filesystem::directory_iterator(workingDirectory)){
+		projects.push_back(readFile(dir_entry.path().string()));
+	}
+
+	return projects;
+}
+
+bool FileIOManager::writeProject(const Project& project, std::string path) const{
+	if(path.empty()){
+		path = saveDirectory;
+		path += project.getName();
+		path += ".json";
+	}
+	else{
+		if(!std::filesystem::exists(path))
+			return false;
+	}
+
+	if(saveFormat){
+		return saveFormat->write(path, project);
+	}
+	else
+		return false;
+}
+
+std::string_view FileIOManager::getDirectory() const {
+	return saveDirectory;
+}
+
+bool FileIOManager::setDirectory(std::string path){
+	// Ensure backslash
+	if(path.back() != '\\' && path.back() != '/'){
+		path += "/";
+	}
+
+	if(std::filesystem::exists(path)){
+		saveDirectory = path;
+		return true;
+	}
+	// Create directory if it does not exist
+	else{
+		if(std::filesystem::create_directory(path)){
+			saveDirectory = path;
+			return true;
+		}
+		else
+			return false;
+	}
+}
+
+
+
 
 namespace FileIO{
     std::chrono::system_clock::time_point stringToTimepoint(const std::string& time) {
