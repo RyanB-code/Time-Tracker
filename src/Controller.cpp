@@ -85,7 +85,7 @@ bool Framework::setup(){
     std::unique_ptr<ListProjects>           listProjects    { new ListProjects{"list", projectManager}};
     std::unique_ptr<ListEntries>            listEntries     { new ListEntries("list-entries", projectManager)};
     std::unique_ptr<CreateProject>          createProject   { new CreateProject("create", projectManager)};
-    std::unique_ptr<DeleteProject>          deleteProject   { new DeleteProject("delete", projectManager)};
+    std::unique_ptr<DeleteProject>          deleteProject   { new DeleteProject("delete", projectManager, fileManager)};
     std::unique_ptr<StartTimer>             startTimer      { new StartTimer("start", projectManager)};
     std::unique_ptr<EndTimer>               endTimer        { new EndTimer("end", projectManager)};
     std::unique_ptr<TotalTime>              totalTime       { new TotalTime("total-time", projectManager)};
@@ -249,40 +249,55 @@ bool CreateProject::execute(std::string arg){
     else
         return false;
 }
-DeleteProject::DeleteProject(std::string command, std::weak_ptr<ProjectManager> manager)
-    : ProjectCommand(command, manager)
+DeleteProject::DeleteProject(std::string command, std::weak_ptr<ProjectManager> manager1, std::weak_ptr<FileIOManager> manager2)
+    : ProjectCommand(command, manager1), fileManager {manager2}
 {
     this->description = "Deletes the selected project. If no project is selected, then it will delete the project with the given name.\n";
 }
 bool DeleteProject::execute(std::string arg){
-    if(std::shared_ptr<ProjectManager> manager = projectManager.lock() ){
+    if(std::shared_ptr<ProjectManager> manager1 = projectManager.lock()){
+         if(std::shared_ptr<FileIOManager> manager2 = fileManager.lock() ){
 
-        if(arg.empty()){
-            if(manager->getProject() ){
+            std::string projectName;
 
-                std::string name {manager->getProject()->getName()};
+            // Find proj name from selected project if no arg given
+            if(arg.empty()){
 
-                if(manager->deleteProject(name)){
-                    std::cout << "\tDeleted selected project \"" << name << "\"\n";
-                    return true;
+                if(manager1->getProject()){
+                    projectName = manager1->getProject()->getName(); 
                 }
+                else{
+                     std::cout << "\tThere is no project selected.\n";
+                    return false;
+                }   
+            }
+            // Find project name from argument
+            else{
+               if(manager1->findProject(arg)){
+                    projectName = arg;
+               }
+               else{
+                    std::cout << "\tCould not find project \"" << arg << "\"\n";
+                    return false;
+               }
+            }
+
+            // Find fully qualifed path
+            std::string fullProjectPath { manager2->getDirectory()};
+            fullProjectPath += projectName;
+            fullProjectPath += ".json";
+
+            if(std::filesystem::remove(fullProjectPath) && manager1->deleteProject(projectName)){
+                std::cout << "\tDeleted project \"" << projectName << "\"\n";
                 return true;
             }
             else{
-                std::cout << "\tThere is no project selected.\n";
-                return true;
-            }
-        }
-        else{
-            if(manager->deleteProject(arg)){
-                std::cout << "\tDeleted project \"" << arg << "\"\n";
-                return true;
-            }
-            else{
-                std::cout << "\tCould not find project \"" << arg << "\"\n";
+                std::cout << "\tError deleting project \"" << projectName << "\"\n";
                 return false;
             }
-        }
+         }
+         else
+            return false;
     }
     else
         return false;

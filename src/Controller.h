@@ -76,7 +76,9 @@ public:
 };
 class DeleteProject : public ProjectCommand{
 public:
-    DeleteProject(std::string command, std::weak_ptr<ProjectManager> manager);
+    std::weak_ptr<FileIOManager> fileManager;
+
+    DeleteProject(std::string command, std::weak_ptr<ProjectManager> manager1, std::weak_ptr<FileIOManager> manager2);
 
     bool execute(std::string arg="") override; 
 };
