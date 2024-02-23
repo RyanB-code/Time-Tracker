@@ -227,7 +227,7 @@ bool ListEntries::execute(std::string arg){
 CreateProject::CreateProject(std::string command, std::weak_ptr<ProjectManager> manager)
     : ProjectCommand(command, manager)
 {
-    this->description = "Creates a new project with the a given name.\n";
+    this->description = "Creates a new project with the a given name and automatically selects it.\n";
 }
 bool CreateProject::execute(std::string arg){
     if(arg.empty()){
@@ -239,6 +239,7 @@ bool CreateProject::execute(std::string arg){
         ProjectPtr newProject{ new Project (arg)};
 
         if(manager->addProject(newProject)){
+            manager->selectProject(arg);
             return true;
         }
         else{
