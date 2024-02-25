@@ -47,7 +47,7 @@ bool JsonFormat::write(std::string path, const Project& project) const{
     file << std::setw(1) << std::setfill('\t') << j;
     file.close();
 
-    return false;
+    return true;
 }
 
 Project JsonFormat::read(std::string path) const{
@@ -118,11 +118,24 @@ std::vector<ProjectPtr> FileIOManager::readDirectory (std::string directory) con
 			return std::vector<ProjectPtr>{};		// Should find better way to signal the directory is bad 
 	}
 
+	int filesThatCouldNotBeRead{0};
+
 	std::vector<ProjectPtr> projects;
 	const std::filesystem::path workingDirectory{directory};
 	for(auto const& dir_entry : std::filesystem::directory_iterator(workingDirectory)){
-		projects.push_back(readFile(dir_entry.path().string()));
+		try{
+			projects.push_back(readFile(dir_entry.path().string()));
+		}
+		catch(std::exception& e){
+			++filesThatCouldNotBeRead;
+		}
 	}
+
+	/* Output number of files that could not be read
+	if(filesThatCouldNotBeRead != 0){
+		std::cout << "\tThere were " << filesThatCouldNotBeRead << " file(s) that could not be read in \"" << directory << "\"\n";
+	}
+	*/
 
 	return projects;
 }
