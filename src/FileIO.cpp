@@ -174,12 +174,17 @@ bool FileIOManager::setDirectory(std::string path){
 	}
 	// Create directory if it does not exist
 	else{
-		if(std::filesystem::create_directory(path)){
-			saveDirectory = path;
-			return true;
+		try{
+			if(std::filesystem::create_directory(path)){
+				saveDirectory = path;
+				return true;
+			}
+			else
+				return false;
 		}
-		else
+		catch(std::filesystem::filesystem_error& e){
 			return false;
+		}
 	}
 }
 
