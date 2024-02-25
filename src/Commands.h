@@ -1,5 +1,6 @@
 #include "Project.h"
 #include "FileIO.h"
+#include "Settings.h"
 
 #include <sstream>
 #include <format>
@@ -112,4 +113,16 @@ public:
     PrintFileIODirectory(std::string command, std::weak_ptr<FileIOManager> fileManager);
     
     bool execute(std::string arg="") override;
+};
+
+
+
+class PrintSettings : public Command{
+public:
+    std::weak_ptr<Settings> settings;
+
+    PrintSettings(std::string command, std::weak_ptr<Settings> setSettings);
+
+    bool execute(std::string arg="") override;
+
 };
