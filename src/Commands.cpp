@@ -358,4 +358,25 @@ bool PrintSettings::execute(std::string arg){
     else
         return false;
 }
+RefreshSettings::RefreshSettings(std::string command,  std::weak_ptr<Settings> setSettings,  std::weak_ptr<FileIOManager> manager)
+:   Command{command}, settings{setSettings}, fileManager{manager}
+{
+
+}
+bool RefreshSettings::execute(std::string arg){
+    if(std::shared_ptr<Settings> set = settings.lock()){
+        Timestamp::setHourOffset(set->getHourOffset());
+
+        if(std::shared_ptr<FileIOManager> manager = fileManager.lock()){
+            manager->setDirectory(set->getProjectDirectory());
+
+            return true;
+        }
+        else
+            return false;
+        
+    }
+    else
+        return false;
+}
 

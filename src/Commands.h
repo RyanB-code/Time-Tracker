@@ -126,3 +126,14 @@ public:
     bool execute(std::string arg="") override;
 
 };
+class RefreshSettings : public Command{
+public:
+    std::weak_ptr<Settings> settings;
+    std::weak_ptr<FileIOManager> fileManager;
+
+
+    RefreshSettings(std::string command, std::weak_ptr<Settings> setSettings, std::weak_ptr<FileIOManager> fileManager);
+
+    bool execute(std::string arg="") override;
+
+};
