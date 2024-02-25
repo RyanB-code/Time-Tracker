@@ -1,5 +1,7 @@
 #include "Framework.h"
 
+using json = nlohmann::json;
+
 Framework::Framework(std::shared_ptr<ProjectManager> manager1, std::shared_ptr<FileIOManager> manager2, int hourOffset)
     : projectManager{manager1}, fileManager{manager2}
 {
@@ -120,4 +122,117 @@ void Framework::handleArguments(std::vector<std::string>& args){
     }
     else
         std::cout << "\t\"" << args[0] << "\" is not a valid command.\n"; 
+}
+
+
+Settings::Settings(std::string setProjectDirectory, std::string setSettingsPath, bool setVerbose, int setHourOffset)
+    :   settingsPath { setSettingsPath },
+        projectDirectory {setProjectDirectory },
+        verbose { setVerbose },
+        hourOffset { setHourOffset }
+{
+
+}
+Settings::~Settings(){
+
+}
+void Settings::setVerbose(bool set){
+    verbose = set;
+}
+void Settings::setHourOffset(int set){
+    hourOffset = set;
+}
+bool Settings::setProjectDirectory(std::string set){
+
+    // Ensure backslash
+	if(set.back() != '\\' && set.back() != '/'){
+		set += "/";
+	}
+
+    // If it exists, set member variable
+    if(std::filesystem::exists(set)){
+        projectDirectory = set;
+        return true;
+    }
+    else{
+
+        // Create directory if it does not exist
+        if(std::filesystem::create_directory(set)){
+            projectDirectory = set;
+            return true;
+        }
+        else // Failed to create directory
+            return false;
+    }
+
+    return false;
+}
+bool Settings::setSettingsPath(std::string set){
+
+    // If file exists, set member variable
+    if(std::filesystem::exists(set)){
+        settingsPath = set;
+        return true;
+    }
+    else{
+        std::ofstream settingsFile {set};       // Create file
+
+        // Check if it exists again
+        if(std::filesystem::exists(set)){
+            settingsPath = set;
+            return true;
+        }
+        else
+            return false;
+    }
+    return false;
+}
+bool Settings::getVerbose() const{
+    return verbose;
+}
+int Settings::getHourOffset() const{
+    return hourOffset;
+}
+std::string Settings::getProjectDirectory() const{
+    return projectDirectory;
+}
+std::string Settings::getSettingsPath() const{
+    return settingsPath;
+}
+bool Settings::readSettingsFile(){
+    std::ifstream inputFile{ settingsPath, std::ios::in };
+    json j = json::parse(inputFile);
+
+    bool verboseBuffer;
+    int hourOffsetBuffer;
+    std::string projectDirectoryBuffer, settingsPathBuffer;
+
+    j.at("verbose").get_to(verboseBuffer);
+	j.at("hourOffset").get_to(hourOffsetBuffer);
+    j.at("projectDirectory").get_to(projectDirectoryBuffer);
+    j.at("settingsPath").get_to(settingsPathBuffer);
+
+    setVerbose(verboseBuffer);
+    setHourOffset(hourOffsetBuffer);
+    
+    if(!setProjectDirectory(projectDirectoryBuffer) || !setSettingsPath(settingsPathBuffer)){
+        return false;
+    }
+    else
+        return true;
+    
+    return false;
+}
+bool Settings::writeSettingsFile() const{
+    json j{
+        {"verbose", verbose},
+        {"hourOffset", hourOffset},
+        ("projectDirectory", projectDirectory),
+        {"settingsPath", settingsPath}
+    };
+
+    // Write to file here
+    std::ofstream file{settingsPath};
+    file << std::setw(1) << std::setfill('\t') << j;
+    file.close();
 }
