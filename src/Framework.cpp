@@ -61,6 +61,8 @@ bool Framework::setup(){
 
         if(!fileManager->setDirectory(settings->getProjectDirectory()))
             std::cout << "\tCould not set new project directory upon startup.\n";
+
+        Timestamp::setHourOffset(settings->getHourOffset());
     }
     else{
         return false;
@@ -89,6 +91,8 @@ bool Framework::setup(){
     std::unique_ptr<SaveAllProjects>        saveAllProjects { new SaveAllProjects("save-all", fileManager, projectManager)};
     std::unique_ptr<PrintFileIODirectory>   printDirectory  { new PrintFileIODirectory("print-file-directory", fileManager)};
     std::unique_ptr<PrintSettings>          printSettings   { new PrintSettings("print-settings", settings)};
+    std::unique_ptr<RefreshSettings>        refreshSettings { new RefreshSettings("refresh-settings", settings, fileManager)};
+
 
 
     addCommand(std::move(deselectProject));
@@ -104,6 +108,7 @@ bool Framework::setup(){
     addCommand(std::move(saveAllProjects));
     addCommand(std::move(printDirectory));
     addCommand(std::move(printSettings));
+    addCommand(std::move(refreshSettings));
 
 
     return true;
