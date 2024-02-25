@@ -341,3 +341,21 @@ bool PrintFileIODirectory::execute(std::string arg){
     
     return false;
 }
+
+PrintSettings::PrintSettings(std::string command,  std::weak_ptr<Settings> setSettings)
+:   Command{command}, settings{setSettings}
+{
+
+}
+bool PrintSettings::execute(std::string arg){
+    if(std::shared_ptr<Settings> set = settings.lock()){
+        std::cout << "\tProject Directory: \"" << set->getProjectDirectory() << "\"\n";
+        std::cout << "\tSettings File: \"" << set->getSettingsPath() << "\"\n";
+        std::cout << "\tHour Offset: " << set->getHourOffset() << "\n";
+        std::cout << "\tVerbose Mode: " << std::boolalpha << set->getVerbose() << "\n";
+        return true;
+    }
+    else
+        return false;
+}
+
