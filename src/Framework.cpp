@@ -59,7 +59,8 @@ bool Framework::setup(){
     if(settings){
         settings->readSettingsFile();
 
-        fileManager->setDirectory(settings->getProjectDirectory());
+        if(!fileManager->setDirectory(settings->getProjectDirectory()))
+            std::cout << "\tCould not set new project directory upon startup.\n";
     }
     else{
         return false;
