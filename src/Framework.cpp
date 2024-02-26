@@ -78,37 +78,40 @@ bool Framework::setup(){
 
 
     // Add commands
-    std::unique_ptr<DeselectProject>        deselectProject { new DeselectProject{"deselect", projectManager}};
-    std::unique_ptr<SelectProject>          selectProject   { new SelectProject{"select", projectManager}};
-    std::unique_ptr<ListProjects>           listProjects    { new ListProjects{"list", projectManager}};
-    std::unique_ptr<ListEntries>            listEntries     { new ListEntries("list-entries", projectManager)};
-    std::unique_ptr<CreateProject>          createProject   { new CreateProject("create", projectManager)};
-    std::unique_ptr<DeleteProject>          deleteProject   { new DeleteProject("delete", projectManager, fileManager)};
-    std::unique_ptr<StartTimer>             startTimer      { new StartTimer("start", projectManager)};
-    std::unique_ptr<EndTimer>               endTimer        { new EndTimer("end", projectManager)};
-    std::unique_ptr<TotalTime>              totalTime       { new TotalTime("total-time", projectManager)};
-    std::unique_ptr<IsRunning>              isRunning       { new IsRunning("is-running", projectManager)};
-    std::unique_ptr<SaveAllProjects>        saveAllProjects { new SaveAllProjects("save-all", fileManager, projectManager)};
-    std::unique_ptr<PrintFileIODirectory>   printDirectory  { new PrintFileIODirectory("print-file-directory", fileManager)};
-    std::unique_ptr<PrintSettings>          printSettings   { new PrintSettings("print-settings", settings)};
-    std::unique_ptr<RefreshSettings>        refreshSettings { new RefreshSettings("refresh-settings", settings, fileManager)};
-
+    std::unique_ptr<DeselectProject>        deselectProject { new DeselectProject       {"desel",               projectManager}};
+    std::unique_ptr<SelectProject>          selectProject   { new SelectProject         {"sel",                 projectManager}};
+    std::unique_ptr<ListProjects>           listProjects    { new ListProjects          {"ls",                  projectManager}};
+    std::unique_ptr<CreateProject>          createProject   { new CreateProject         {"mkproj",              projectManager}};
+    std::unique_ptr<DeleteProject>          deleteProject   { new DeleteProject         {"delproj",             projectManager, fileManager}};
+    std::unique_ptr<StartTimer>             startTimer      { new StartTimer            {"start",               projectManager}};
+    std::unique_ptr<EndTimer>               endTimer        { new EndTimer              {"stop",                projectManager}};
+    std::unique_ptr<TotalTime>              totalTime       { new TotalTime             {"print-dur",           projectManager}};
+    std::unique_ptr<IsRunning>              isRunning       { new IsRunning             {"is-running",          projectManager}};
+    std::unique_ptr<Save>                   save            { new Save                  {"save",                fileManager, projectManager, settings}};
+    std::unique_ptr<PrintFileIODirectory>   printDirectory  { new PrintFileIODirectory  {"print-file-dir",      fileManager}};
+    std::unique_ptr<PrintSettings>          printSettings   { new PrintSettings         {"print-settings",      settings}};
+    std::unique_ptr<RefreshSettings>        refreshSettings { new RefreshSettings       {"refresh-settings",    settings, fileManager}};
+    std::unique_ptr<SetVerbose>             setVerbose      { new SetVerbose            {"set-verbose",         settings}};
+    std::unique_ptr<SetHourOffset>          setHourOffset   { new SetHourOffset         {"set-hour-offset",     settings}};
+    std::unique_ptr<SetProjectDirectory>    setProjDirec    { new SetProjectDirectory   {"set-proj-dir",        settings}};
 
 
     addCommand(std::move(deselectProject));
     addCommand(std::move(selectProject));
     addCommand(std::move(listProjects));
-    addCommand(std::move(listEntries));
     addCommand(std::move(createProject));
     addCommand(std::move(deleteProject));
     addCommand(std::move(startTimer));
     addCommand(std::move(endTimer));
     addCommand(std::move(totalTime));
     addCommand(std::move(isRunning));
-    addCommand(std::move(saveAllProjects));
+    addCommand(std::move(save));
     addCommand(std::move(printDirectory));
     addCommand(std::move(printSettings));
     addCommand(std::move(refreshSettings));
+    addCommand(std::move(setVerbose));
+    addCommand(std::move(setHourOffset));
+    addCommand(std::move(setProjDirec));
 
 
     return true;
@@ -122,6 +125,9 @@ void Framework::handleArguments(std::vector<std::string>& args){
     // Help command
     if(args[0] == "help"){
         std::cout << "Time Tracker help information for all commands.\n";
+        std::cout << std::format("\t{:20}\t{}", "exit", "Exits the application.\n");
+
+        // Iterate through commands list and print command and description
         for(auto i{commands.begin()}; i != commands.end(); ++i){
             std::cout << std::format("\t{:20}\t{}", i->second->getCommand(), i->second->getDescription());
         }
