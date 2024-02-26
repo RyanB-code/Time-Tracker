@@ -30,7 +30,7 @@ ProjectCommand::~ProjectCommand(){
 SelectProject::SelectProject(std::string command, std::weak_ptr<ProjectManager> manager)
     : ProjectCommand(command, manager)
 {
-    this->description = "Selects a project by name.\n";
+    this->description = "<name> Selects a project by name.\n";
 }
 bool SelectProject::execute(std::string arg){
     if(std::shared_ptr<ProjectManager> manager = projectManager.lock() ){
@@ -47,7 +47,7 @@ bool SelectProject::execute(std::string arg){
 DeselectProject::DeselectProject(std::string command, std::weak_ptr<ProjectManager> manager)
     : ProjectCommand(command, manager)
 {
-    this->description = "Removes any selected project.\n";
+    this->description = "Deselects the current project.\n";
 }
 bool DeselectProject::execute(std::string arg){
     if(std::shared_ptr<ProjectManager> manager = projectManager.lock() ){
@@ -60,53 +60,48 @@ bool DeselectProject::execute(std::string arg){
 ListProjects::ListProjects(std::string command, std::weak_ptr<ProjectManager> manager)
     : ProjectCommand(command, manager)
 {
-    this->description = "Lists all tracked projects by name.\n";
+    this->description = "[-p or -e] Lists projects or entries of selected project.\n";
 }
 bool ListProjects::execute(std::string arg){
     if(std::shared_ptr<ProjectManager> manager = projectManager.lock() ){
 
-        // Ensure it is not empty
-        if(manager->getAllProjectNames().empty()){
-            std::cout << "\tThere are no tracked projects.\n";
-            return true;
-        }
-        else{
-            std::cout << "Current Projects:\n";
-            for(std::string& s : manager->getAllProjectNames()){
-                std::cout << '\t' << s << "\n";
+        // List all project names
+        if(arg == "-p"){
+            // Ensure map is not empty
+            if(manager->getAllProjectNames().empty()){
+                std::cout << "\tThere are no tracked projects.\n";
+                return true;
             }
-            return true;
+            else{
+                std::cout << "Current Projects:\n";
+                for(std::string& s : manager->getAllProjectNames()){
+                    std::cout << '\t' << s << "\n";
+                }
+                return true;
+            }
         }
-
-    }
-    else
-        return false;
-}
-ListEntries::ListEntries(std::string command, std::weak_ptr<ProjectManager> manager)
-    : ProjectCommand(command, manager)
-{
-    this->description = "Lists all entries of the selected project.\n";
-}
-bool ListEntries::execute(std::string arg){
-    if(std::shared_ptr<ProjectManager> manager = projectManager.lock() ){
-        if(manager->getProject() ){
-            std::cout << manager->getProject()->printAllEntries().str();
-            return true;
+        else if(arg == "-e"){
+            if(manager->getProject() ){
+                std::cout << manager->getProject()->printAllEntries().str();
+                return true;
+            }
+            else{
+                std::cout << "\tThere is no project selected.\n";
+                return false;
+            }
         }
         else{
-            std::cout << "\tThere is no project selected.\n";
+            std::cout << "\tInvalid argument.\n";
             return false;
         }
     }
     else
         return false;
-
-    return false;
 }
 CreateProject::CreateProject(std::string command, std::weak_ptr<ProjectManager> manager)
     : ProjectCommand(command, manager)
 {
-    this->description = "Creates a new project with the a given name and automatically selects it.\n";
+    this->description = "<name> Creates a new project with the given name and automatically selects it.\n";
 }
 bool CreateProject::execute(std::string arg){
     if(arg.empty()){
@@ -132,7 +127,7 @@ bool CreateProject::execute(std::string arg){
 DeleteProject::DeleteProject(std::string command, std::weak_ptr<ProjectManager> manager1, std::weak_ptr<FileIOManager> manager2)
     : ProjectCommand(command, manager1), fileManager {manager2}
 {
-    this->description = "Deletes the selected project. If no project is selected, then it will delete the project with the given name.\n";
+    this->description = "[name] Deletes the selected project. If no project is selected, then it will delete the project with the given name.\n";
 }
 bool DeleteProject::execute(std::string arg){
     if(std::shared_ptr<ProjectManager> manager1 = projectManager.lock()){
@@ -185,7 +180,7 @@ bool DeleteProject::execute(std::string arg){
 StartTimer::StartTimer(std::string command, std::weak_ptr<ProjectManager> manager)
     : ProjectCommand(command, manager)
 {
-    this->description = "Starts a new timer for the selected project with a given name, if one is provided.\n";
+    this->description = "[name] Starts a new timer for the selected project with a given name, if one is provided.\n";
 }
 bool StartTimer::execute(std::string arg){
     if(std::shared_ptr<ProjectManager> manager = projectManager.lock() ){
@@ -240,7 +235,7 @@ bool EndTimer::execute(std::string arg){
 IsRunning::IsRunning(std::string command, std::weak_ptr<ProjectManager> manager)
     : ProjectCommand(command, manager)
 {
-    this->description = "Check if a timer is running for the selected project, or of the project of the given name if no project is selected.\n";
+    this->description = "Check if a timer is running for either selected project or project with the given name.\n";
 }
 bool IsRunning::execute(std::string arg){
     if(std::shared_ptr<ProjectManager> manager = projectManager.lock() ){
@@ -305,32 +300,75 @@ FileIOCommand::~FileIOCommand(){
 
 }
 
-SaveAllProjects::SaveAllProjects(std::string command, std::weak_ptr<FileIOManager> fileManager, std::weak_ptr<ProjectManager> projectManager)
-    :   FileIOCommand(command, fileManager), projectManager{projectManager}
+Save::Save(std::string command, std::weak_ptr<FileIOManager> manager2, std::weak_ptr<ProjectManager> manager1, std::weak_ptr<Settings> set)
+    :   Command(command), projectManager{manager1}, fileManager{manager2}, settings{set}
 {
-    this->description = "Saves all projects to the specific working directory.\n";
+    this->description = "[-p or -s] -p saves all projects, -s saves all settings. No arguments saves everything.\n";
 }
-bool SaveAllProjects::execute(std::string arg){
-    if(std::shared_ptr<FileIOManager> _fileManager = fileManager.lock()){
-    
-        if(std::shared_ptr<ProjectManager> _projectManager = projectManager.lock()){
+bool Save::execute(std::string arg){
+    bool saveSettings { false };
+    bool saveProjets  { false };
 
-            std::vector<std::shared_ptr<const Project>> projectsBuffer {_projectManager->getAllProjects()};
-            for(auto proj : projectsBuffer ){
-                const Project& projectBuffer { *proj.get()};
-                _fileManager->writeProject(projectBuffer);
+
+    // If no argument is given, save all
+    if(arg.empty()){
+        saveSettings = true;
+        saveProjets = true;
+    }
+    else if(arg == "-p")
+        saveProjets = true;
+    else if(arg == "-s")
+        saveSettings = true;
+    else{
+        std::cout << "\tInvalid argument.\n";
+        return false;
+    }
+    
+    // Save all projects
+    if(saveProjets){
+        int savingErrors { 0 };
+        if(std::shared_ptr<FileIOManager> _fileManager = fileManager.lock()){
+            if(std::shared_ptr<ProjectManager> _projectManager = projectManager.lock()){
+                std::vector<std::shared_ptr<const Project>> projectsBuffer {_projectManager->getAllProjects()};
+                for(auto proj : projectsBuffer ){
+                    const Project& projectBuffer { *proj.get()};
+                    if(!_fileManager->writeProject(projectBuffer))
+                        ++savingErrors;
+                }
+
+                if(savingErrors != 0){
+                    std::cout << "\tThere was an error saving " << savingErrors << " projct(s)\n";
+                    return false;
+                }
+                else{
+                    return true;
+                }
+            }
+        }
+        else
+            return false;
+    }
+    
+    // Save settings
+    if(saveSettings){
+        if(std::shared_ptr<Settings> set = settings.lock()){
+            if(set->writeSettingsFile()){
+                return true;
+            }
+            else{
+                std::cout << "\tCould not write to settings file \"" << set->getSettingsPath() << "\"\n";
+                return false;
             }
         }
     }
-    else
-        return false;
+   
 
     return false;
 }
 PrintFileIODirectory::PrintFileIODirectory(std::string command, std::weak_ptr<FileIOManager> fileManager)
     :   FileIOCommand(command, fileManager)
 {
-    this->description = "Saves all projects to the specific working directory.\n";
+    this->description = "View current project read/write directory.\n";
 }
 bool PrintFileIODirectory::execute(std::string arg){
     if(std::shared_ptr<FileIOManager> manager = fileManager.lock()){
@@ -345,7 +383,7 @@ bool PrintFileIODirectory::execute(std::string arg){
 PrintSettings::PrintSettings(std::string command,  std::weak_ptr<Settings> setSettings)
 :   Command{command}, settings{setSettings}
 {
-
+    this->description = "Views all current settings.\n";
 }
 bool PrintSettings::execute(std::string arg){
     if(std::shared_ptr<Settings> set = settings.lock()){
@@ -361,6 +399,7 @@ bool PrintSettings::execute(std::string arg){
 RefreshSettings::RefreshSettings(std::string command,  std::weak_ptr<Settings> setSettings,  std::weak_ptr<FileIOManager> manager)
 :   Command{command}, settings{setSettings}, fileManager{manager}
 {
+    this->description = "Applies current settings.\n";
 
 }
 bool RefreshSettings::execute(std::string arg){
@@ -379,4 +418,71 @@ bool RefreshSettings::execute(std::string arg){
     else
         return false;
 }
+SetVerbose::SetVerbose(std::string command,  std::weak_ptr<Settings> setSettings)
+:   Command{command}, settings{setSettings}
+{
+    this->description = "<value> Set verbose mode on/off. \"true\" or \"false\"\n";
 
+}
+bool SetVerbose::execute(std::string arg){
+    if(std::shared_ptr<Settings> set = settings.lock()){
+        if(arg.empty()){
+            std::cout << "\tThis requires one argument.\n";
+            return false;
+        }
+        else if (arg == "true" || arg == "TRUE"){
+            set->setVerbose(true);
+            return true;
+        }
+        else if (arg == "false" || arg == "FALSE"){
+            set->setVerbose(false);
+            return true;
+        }
+        else{
+            std::cout << "\tInvalid argument.\n";
+            return false;
+        }
+    }
+    else
+        return false;
+}
+SetHourOffset::SetHourOffset(std::string command,  std::weak_ptr<Settings> setSettings)
+:   Command{command}, settings{setSettings}
+{
+    this->description = "<value> Set hour offset for timers.\n";
+
+}
+bool SetHourOffset::execute(std::string arg){
+    if(std::shared_ptr<Settings> set = settings.lock()){
+        try{
+            int offset {std::stoi(arg)};
+            set->setHourOffset(offset);
+            return true;
+        }
+        catch(std::exception& e){
+            std::cout << "\tInvalid argument.\n";
+            return false;
+        }
+    }
+    else
+        return false;
+}
+SetProjectDirectory::SetProjectDirectory(std::string command,  std::weak_ptr<Settings> setSettings)
+:   Command{command}, settings{setSettings}
+{
+    this->description = "<directory> Set the read/write directory for projects.\n";
+
+}
+bool SetProjectDirectory::execute(std::string arg){
+    if(std::shared_ptr<Settings> set = settings.lock()){
+        if(set->setProjectDirectory(arg)){
+            return true;
+        }
+        else{
+            std::cout << "\tCould not set project save directory to \"" << arg << "\"\n";
+            return false;
+        }
+    }
+    else
+        return false;
+}

@@ -45,12 +45,6 @@ public:
 
     bool execute(std::string arg="") override;
 };
-class ListEntries : public ProjectCommand{
-public:
-    ListEntries(std::string command, std::weak_ptr<ProjectManager> manager);
-
-    bool execute(std::string arg="") override; 
-};
 class CreateProject : public ProjectCommand{
 public:
     CreateProject(std::string command, std::weak_ptr<ProjectManager> manager);
@@ -99,11 +93,13 @@ public:
     ~FileIOCommand();
 };
 
-class SaveAllProjects : public FileIOCommand {
+class Save : public Command {
 public:
     std::weak_ptr<ProjectManager> projectManager;
+    std::weak_ptr<FileIOManager> fileManager;
+    std::weak_ptr<Settings> settings;
 
-    SaveAllProjects(std::string command, std::weak_ptr<FileIOManager> fileManager, std::weak_ptr<ProjectManager> projectManager);
+    Save(std::string command, std::weak_ptr<FileIOManager> manager2, std::weak_ptr<ProjectManager> manager1, std::weak_ptr<Settings> set);
     
     bool execute(std::string arg="") override;
 };
@@ -132,8 +128,33 @@ public:
     std::weak_ptr<FileIOManager> fileManager;
 
 
-    RefreshSettings(std::string command, std::weak_ptr<Settings> setSettings, std::weak_ptr<FileIOManager> fileManager);
+    RefreshSettings(std::string command, std::weak_ptr<Settings> setSettings, std::weak_ptr<FileIOManager> manager);
 
     bool execute(std::string arg="") override;
 
+};
+
+class SetVerbose : public Command{
+public:
+    std::weak_ptr<Settings> settings;
+
+    SetVerbose(std::string command, std::weak_ptr<Settings> setSettings);
+
+    bool execute(std::string arg="") override;
+};
+class SetHourOffset : public Command{
+public:
+    std::weak_ptr<Settings> settings;
+
+    SetHourOffset(std::string command, std::weak_ptr<Settings> setSettings);
+
+    bool execute(std::string arg="") override;
+};
+class SetProjectDirectory : public Command{
+public:
+    std::weak_ptr<Settings> settings;
+
+    SetProjectDirectory(std::string command, std::weak_ptr<Settings> setSettings);
+
+    bool execute(std::string arg="") override;
 };
