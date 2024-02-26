@@ -1,42 +1,41 @@
-#include "Project.h"
-#include "FileIO.h"
+#include "Framework.h"
 
 #include <iostream>
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) {	
 
-	
-	Project proj{"Sup Bitches"};
+	// Main will work as my assembler because I do not wish
+	// to create an entire new object and class to do what can be done.
 
-	proj.startTimer();
+	#ifdef __linux__
+		std::string projectPath {"/usr/local/share/projects/Time-Tracker/Test-Directory/Projects"};
+		// std::string projectPath {"/usr/local/bin/Time-Tracker/}; // For realease/deployment
+		std::string settingsFile {"/usr/local/share/projects/Time-Tracker/Test-Directory/Settings.json"};
+	#endif
 
-	std::string i;
-	std::cin >> i;
+	#ifdef _Win32
+		std::string projectPath { /*INPUT DESIRED SAVE DIRECTORY HERE*/};
+		std::string settingsFile { /*INPUT DESIRED SETTINGS PATH HERE*/};
+	#endif
 
-	proj.endTimer();
+	try{
+		std::shared_ptr<JsonFormat> 	jsonFormat 		{ new JsonFormat };
+		std::shared_ptr<ProjectManager> projectManager 	{ new ProjectManager };
+		std::shared_ptr<FileIOManager> 	fileManager 	{ new FileIOManager{ jsonFormat} };
+		fileManager->setDirectory(projectPath);
 
-	proj.startTimer();
-	std::cin >> i;
-	proj.endTimer();
+		std::shared_ptr<Settings> 		settings		{ new Settings{projectPath, settingsFile}};
 
-	proj.startTimer();
-	std::cin >> i;
-	proj.endTimer();
+		Framework handler (projectManager, fileManager, settings);
 
-	std::cout << proj.printAllEntries().str() << "\n\nTotal: " << proj.printTotalTime() << "\n";
-
-	std::cout << proj.getLastUpdated().printTime() << std::endl;
-	
-
-	std::string path {"/usr/local/share/projects/Time-Tracker/textfile.txt"};
-	JsonFormat jsonWriter{};
-
-	jsonWriter.write(path, proj);
-
-	Project newProj {jsonWriter.read(path)};
-
-	std::cout << "\n\nAfter read:\n\n" << newProj.printAllEntries().str() << "\n\nTotal: " << newProj.printTotalTime() << "\n";
-
-	
+		if(handler.setup()){
+			handler.run();
+		}
+		else
+			std::cout << "Error in setup. Application exited.\n";
+	}
+	catch(std::exception& e){
+		std::cout << "\t" << e.what() << "\n\tApplication aborted.\n";
+	}	
 	return 0;
 }
