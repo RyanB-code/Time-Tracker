@@ -37,7 +37,7 @@ bool Settings::setProjectDirectory(std::string set){
         // Create directory if it does not exist
         try{
 			if(std::filesystem::create_directory(set)){
-				settingsPath = set;
+				projectDirectory = set;
 				return true;
 			}
 			else
