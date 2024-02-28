@@ -2,10 +2,10 @@
 
 using json = nlohmann::json;
 
-Framework::Framework(std::shared_ptr<ProjectManager> manager1, std::shared_ptr<FileIOManager> manager2,  std::shared_ptr<Settings> setSettings)
-    : projectManager{manager1}, fileManager{manager2}, settings{setSettings}
+Framework::Framework(std::shared_ptr<ProjectManager> manager1, std::shared_ptr<FileIOManager> manager2)
+    : projectManager{manager1}, fileManager{manager2}
 {
-    Timestamp::setHourOffset(settings->getHourOffset());
+    
 }
 Framework::~Framework(){
     
@@ -56,12 +56,11 @@ bool Framework::addCommand(std::unique_ptr<Command> command){
 bool Framework::setup(){
 
     // Read settings file
-    if(settings){
-        settings->readSettingsFile();
+    if(!settings){
+        settings = fileManager->readSettingsFile();
+    }
 
-        if(!fileManager->setDirectory(settings->getProjectDirectory()))
-            std::cout << "\tCould not set new project directory upon startup.\n";
-
+    if(settings && fileManager){
         Timestamp::setHourOffset(settings->getHourOffset());
     }
     else{

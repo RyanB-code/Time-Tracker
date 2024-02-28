@@ -4,13 +4,12 @@
 
 int main(int argc, char* argv[]) {	
 
-	// Main will work as my assembler because I do not wish
+	// Main() will work as my assembler because I do not wish
 	// to create an entire new object and class to do what can be done.
 
 	#ifdef __linux__
-		std::string projectPath {"/usr/local/share/projects/Time-Tracker/Test-Directory/Projects"};
-		// std::string projectPath {"/usr/local/bin/Time-Tracker/}; // For realease/deployment
-		std::string settingsFile {"/usr/local/share/projects/Time-Tracker/Test-Directory/Settings.json"};
+		std::string homeDirectory {"/usr/local/share/projects/Time-Tracker/Test-Directory/"};
+		std::string projDirectory {homeDirectory + "Projects/"};
 	#endif
 
 	#ifdef _Win32
@@ -19,14 +18,15 @@ int main(int argc, char* argv[]) {
 	#endif
 
 	try{
-		std::shared_ptr<JsonFormat> 	jsonFormat 		{ new JsonFormat };
-		std::shared_ptr<ProjectManager> projectManager 	{ new ProjectManager };
-		std::shared_ptr<FileIOManager> 	fileManager 	{ new FileIOManager{ jsonFormat} };
-		fileManager->setDirectory(projectPath);
+		std::shared_ptr<JsonFormat> 			jsonFormat 		{ new JsonFormat };
+		std::shared_ptr<SettingsJsonFormat>		settingsJson	{ new SettingsJsonFormat };
+		std::shared_ptr<ProjectManager> 		projectManager 	{ new ProjectManager };
+		std::shared_ptr<FileIOManager> 			fileManager 	{ new FileIOManager{ jsonFormat, settingsJson} };
 
-		std::shared_ptr<Settings> 		settings		{ new Settings{projectPath, settingsFile}};
+		fileManager->setProjectDirectory(projDirectory);
+		fileManager->setHomeDirectory(homeDirectory);
 
-		Framework handler (projectManager, fileManager, settings);
+		Framework handler {projectManager, fileManager};
 
 		if(handler.setup()){
 			handler.run();

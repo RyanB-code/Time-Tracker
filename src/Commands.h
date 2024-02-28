@@ -1,6 +1,5 @@
 #include "Project.h"
 #include "FileIO.h"
-#include "Settings.h"
 
 #include <sstream>
 #include <format>

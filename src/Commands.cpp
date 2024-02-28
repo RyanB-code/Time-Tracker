@@ -158,7 +158,7 @@ bool DeleteProject::execute(std::string arg){
             }
 
             // Find fully qualifed path
-            std::string fullProjectPath { manager2->getDirectory()};
+            std::string fullProjectPath { manager2->getProjectDirectory()};
             fullProjectPath += projectName;
             fullProjectPath += ".json";
 
@@ -351,12 +351,12 @@ bool Save::execute(std::string arg){
     
     // Save settings
     if(saveSettings){
-        if(std::shared_ptr<Settings> set = settings.lock()){
-            if(set->writeSettingsFile()){
+        if(std::shared_ptr<FileIOManager> _fileManager = fileManager.lock()){
+            if(_fileManager->writeSettings(*std::shared_ptr<Settings>{settings.lock()})){
                 return true;
             }
             else{
-                std::cout << "\tCould not write to settings file \"" << set->getSettingsPath() << "\"\n";
+                std::cout << "\tCould not write to settings file \"" << _fileManager->getSettingsPath() << "\"\n";
                 return false;
             }
         }
@@ -372,7 +372,7 @@ PrintFileIODirectory::PrintFileIODirectory(std::string command, std::weak_ptr<Fi
 }
 bool PrintFileIODirectory::execute(std::string arg){
     if(std::shared_ptr<FileIOManager> manager = fileManager.lock()){
-        std::cout << "\tFile IO Dreictory is \"" << manager->getDirectory() << "\"\n"; 
+        std::cout << "\tHome directory is at \"" << manager->getHomeDirectory() << "\"\n"; 
     }
     else
         return false;
@@ -388,7 +388,6 @@ PrintSettings::PrintSettings(std::string command,  std::weak_ptr<Settings> setSe
 bool PrintSettings::execute(std::string arg){
     if(std::shared_ptr<Settings> set = settings.lock()){
         std::cout << "\tProject Directory: \"" << set->getProjectDirectory() << "\"\n";
-        std::cout << "\tSettings File: \"" << set->getSettingsPath() << "\"\n";
         std::cout << "\tHour Offset: " << set->getHourOffset() << "\n";
         std::cout << "\tVerbose Mode: " << std::boolalpha << set->getVerbose() << "\n";
         return true;
@@ -407,7 +406,7 @@ bool RefreshSettings::execute(std::string arg){
         Timestamp::setHourOffset(set->getHourOffset());
 
         if(std::shared_ptr<FileIOManager> manager = fileManager.lock()){
-            manager->setDirectory(set->getProjectDirectory());
+            manager->setProjectDirectory(set->getProjectDirectory());
 
             return true;
         }
