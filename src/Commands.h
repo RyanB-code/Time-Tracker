@@ -76,12 +76,6 @@ public:
 
     bool execute(std::string arg="") override; 
 };
-class TotalTime : public ProjectCommand{
-public:
-    TotalTime(std::string command, std::weak_ptr<ProjectManager> manager);
-
-    bool execute(std::string arg="") override; 
-};
 
 
 class FileIOCommand : public Command {
@@ -98,29 +92,30 @@ public:
     std::weak_ptr<FileIOManager> fileManager;
     std::weak_ptr<Settings> settings;
 
-    Save(std::string command, std::weak_ptr<FileIOManager> manager2, std::weak_ptr<ProjectManager> manager1, std::weak_ptr<Settings> set);
+    Save(   std::string command, 
+            std::weak_ptr<ProjectManager> setProjManager, 
+            std::weak_ptr<FileIOManager> setFileManager, 
+            std::weak_ptr<Settings> setSettings
+        );
     
     bool execute(std::string arg="") override;
 };
 
-class PrintFileIODirectory : public FileIOCommand {
+class Print : public Command {
 public:
-    PrintFileIODirectory(std::string command, std::weak_ptr<FileIOManager> fileManager);
-    
-    bool execute(std::string arg="") override;
-};
-
-
-
-class PrintSettings : public Command{
-public:
+    std::weak_ptr<ProjectManager> projectManager;
+    std::weak_ptr<FileIOManager> fileManager;
     std::weak_ptr<Settings> settings;
 
-    PrintSettings(std::string command, std::weak_ptr<Settings> setSettings);
-
+    Print(  std::string command, 
+            std::weak_ptr<ProjectManager> setProjManager, 
+            std::weak_ptr<FileIOManager> setFileManager, 
+            std::shared_ptr<Settings> setSettings
+        );
+    
     bool execute(std::string arg="") override;
-
 };
+
 class RefreshSettings : public Command{
 public:
     std::weak_ptr<Settings> settings;
