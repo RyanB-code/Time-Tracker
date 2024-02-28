@@ -257,39 +257,6 @@ bool IsRunning::execute(std::string arg){
     else
         return false;
 }
-TotalTime::TotalTime(std::string command, std::weak_ptr<ProjectManager> manager)
-    : ProjectCommand(command, manager)
-{
-    this->description = "Views the total time of the selected project, or of the project of the given name if no project is selected.\n";
-}
-bool TotalTime::execute(std::string arg){
-    if(std::shared_ptr<ProjectManager> manager = projectManager.lock() ){
-        if(manager->getProject()){
-            std::cout << "\tTotal time for this project is: " << manager->getProject()->printTotalTime() <<"  [HH:MM:SS]\n";
-            return true;
-        }
-        else{
-            if(arg.empty()){
-                std::cout << "\tThis command requires either a project to be selected or a name to be provided.\n";
-                return false;
-            }
-            else{
-                if(manager->findProject(arg)){
-                    std::cout << "\tTotal time for this project is: " << manager->findProject(arg)->printTotalTime() <<"  [HH:MM:SS]\n";
-                    return true;
-                }
-                else{
-                    std::cout << "\tCould not find project \"" << arg << "\"\n";
-                    return false;
-                }
-            }
-        }   
-    }
-    else
-        return false;
-}
-
-
 
 FileIOCommand::FileIOCommand(std::string command, std::weak_ptr<FileIOManager> manager)
     : Command {command}, fileManager{manager}
@@ -300,8 +267,14 @@ FileIOCommand::~FileIOCommand(){
 
 }
 
-Save::Save(std::string command, std::weak_ptr<FileIOManager> manager2, std::weak_ptr<ProjectManager> manager1, std::weak_ptr<Settings> set)
-    :   Command(command), projectManager{manager1}, fileManager{manager2}, settings{set}
+Save::Save(std::string command, 
+            std::weak_ptr<ProjectManager> setProjManager, 
+            std::weak_ptr<FileIOManager> setFileManager, 
+            std::weak_ptr<Settings> setSettings)   :   
+            Command(command), 
+            projectManager{setProjManager}, 
+            fileManager{setFileManager}, 
+            settings{setSettings}
 {
     this->description = "[-p or -s] -p saves all projects, -s saves all settings. No arguments saves everything.\n";
 }
@@ -365,36 +338,64 @@ bool Save::execute(std::string arg){
 
     return false;
 }
-PrintFileIODirectory::PrintFileIODirectory(std::string command, std::weak_ptr<FileIOManager> fileManager)
-    :   FileIOCommand(command, fileManager)
+
+
+Print::Print(     std::string command, 
+            std::weak_ptr<ProjectManager> setProjManager, 
+            std::weak_ptr<FileIOManager> setFileManager, 
+            std::shared_ptr<Settings> setSettings
+        ) :
+            Command(command), 
+            projectManager{setProjManager}, 
+            fileManager{setFileManager}, 
+            settings{setSettings}
 {
-    this->description = "View current project read/write directory.\n";
+    this->description = "<arg> -t print total time of selected project, -d print project read/write directory, -s print settings\n";
 }
-bool PrintFileIODirectory::execute(std::string arg){
-    if(std::shared_ptr<FileIOManager> manager = fileManager.lock()){
-        std::cout << "\tHome directory is at \"" << manager->getHomeDirectory() << "\"\n"; 
-    }
-    else
+bool Print::execute(std::string arg){
+    if(arg.empty()){
+        std::cout << "\tThis command requires one argument.\n";
         return false;
-    
-    return false;
+    }
+    else if(arg == "-t"){
+        if(std::shared_ptr<ProjectManager> manager = projectManager.lock() ){
+            if(manager->getProject()){
+                std::cout << "\tTotal time for this project is: " << manager->getProject()->printTotalTime() <<"  [HH:MM:SS]\n";
+                return true;
+            }
+            else{
+                std::cout << "\tThere is no project selected.\n";
+                return false;
+            }   
+        }
+        else
+            return false;
+    }
+    else if(arg == "-d"){
+        if(std::shared_ptr<FileIOManager> manager = fileManager.lock()){
+            std::cout << "\tProject directory is at \"" << manager->getProjectDirectory() << "\"\n"; 
+        }
+        else
+            return false;
+        
+        return false;
+    }
+    else if(arg == "-s"){
+        if(std::shared_ptr<Settings> set = settings.lock()){
+            std::cout << "\tProject Directory: \"" << set->getProjectDirectory() << "\"\n";
+            std::cout << "\tHour Offset: " << set->getHourOffset() << "\n";
+            std::cout << "\tVerbose Mode: " << std::boolalpha << set->getVerbose() << "\n";
+            return true;
+        }
+        else
+            return false;
+    }
+    else{
+        std::cout << "\tInvalid argument.\n";
+        return false;
+    }
 }
 
-PrintSettings::PrintSettings(std::string command,  std::weak_ptr<Settings> setSettings)
-:   Command{command}, settings{setSettings}
-{
-    this->description = "Views all current settings.\n";
-}
-bool PrintSettings::execute(std::string arg){
-    if(std::shared_ptr<Settings> set = settings.lock()){
-        std::cout << "\tProject Directory: \"" << set->getProjectDirectory() << "\"\n";
-        std::cout << "\tHour Offset: " << set->getHourOffset() << "\n";
-        std::cout << "\tVerbose Mode: " << std::boolalpha << set->getVerbose() << "\n";
-        return true;
-    }
-    else
-        return false;
-}
 RefreshSettings::RefreshSettings(std::string command,  std::weak_ptr<Settings> setSettings,  std::weak_ptr<FileIOManager> manager)
 :   Command{command}, settings{setSettings}, fileManager{manager}
 {
@@ -426,7 +427,7 @@ SetVerbose::SetVerbose(std::string command,  std::weak_ptr<Settings> setSettings
 bool SetVerbose::execute(std::string arg){
     if(std::shared_ptr<Settings> set = settings.lock()){
         if(arg.empty()){
-            std::cout << "\tThis requires one argument.\n";
+            std::cout << "\tThis command requires one argument.\n";
             return false;
         }
         else if (arg == "true" || arg == "TRUE"){
