@@ -89,19 +89,69 @@ Project JsonFormat::read(std::string path) const{
 
 
 
-FileIOManager::FileIOManager(std::shared_ptr<ProjectFormatter> format)
-	: saveFormat { format }
+SettingsFormatter::SettingsFormatter(){
+
+}
+SettingsFormatter::~SettingsFormatter(){
+
+}
+SettingsJsonFormat::SettingsJsonFormat(){
+
+}
+SettingsJsonFormat::~SettingsJsonFormat(){
+
+}
+bool SettingsJsonFormat::write (std::string path, const Settings& settings) const{
+ 	json j{ };
+    j["verbose"] = settings.getVerbose();
+    j["hour-offset"] = settings.getHourOffset();
+    j["project-directory"] = settings.getProjectDirectory();
+
+    // Write to file here
+    std::ofstream file{path};
+    file << std::setw(1) << std::setfill('\t') << j;
+    file.close();
+
+    return true;
+}
+Settings SettingsJsonFormat::read(std::string path) const{
+
+	std::ifstream inputFile{ path, std::ios::in };
+    json j = json::parse(inputFile);
+
+    bool verboseBuffer;
+    int hourOffsetBuffer;
+    std::string projectDirectoryBuffer;
+
+    j.at("verbose").get_to(verboseBuffer);
+	j.at("hour-offset").get_to(hourOffsetBuffer);
+    j.at("project-directory").get_to(projectDirectoryBuffer);
+
+	return Settings {projectDirectoryBuffer, verboseBuffer, hourOffsetBuffer};
+}
+
+
+
+
+
+
+
+
+
+
+FileIOManager::FileIOManager(std::shared_ptr<ProjectFormatter> setProjFormat, std::shared_ptr<SettingsFormatter> setSettingsFormat)
+	: projectFormat { setProjFormat }, settingsFormat{ setSettingsFormat }
 {
 }
 FileIOManager::~FileIOManager(){
 
 }
-ProjectPtr FileIOManager::readFile(std::string path) const{
+ProjectPtr FileIOManager::readProjectFile(std::string path) const{
 	if(!std::filesystem::exists(path))
 		return nullptr;
 
-	if(saveFormat){ 
-		ProjectPtr projBuffer { new Project {saveFormat->read(path)}};
+	if(projectFormat){ 
+		ProjectPtr projBuffer { new Project {projectFormat->read(path)}};
 		return projBuffer;
     }
     else
@@ -109,9 +159,28 @@ ProjectPtr FileIOManager::readFile(std::string path) const{
 
     return nullptr;
 }
+std::shared_ptr<Settings> FileIOManager::readSettingsFile(std::string path) const{
+
+	if(path.empty()){
+		path = settingsPath;
+	}
+
+	if(!std::filesystem::exists(path))
+		return nullptr;
+
+	if(settingsFormat){ 
+		std::shared_ptr<Settings> settingsBuffer { new Settings {settingsFormat->read(path)}};
+		return settingsBuffer;
+    }
+    else
+        return nullptr;
+
+    return nullptr;
+}
+
 std::vector<ProjectPtr> FileIOManager::readDirectory (std::string directory) const{
 	if(directory.empty()){
-		directory = saveDirectory;
+		directory = projectDirectory;
 	}
 	else{
 		if(!std::filesystem::exists(directory))
@@ -124,7 +193,7 @@ std::vector<ProjectPtr> FileIOManager::readDirectory (std::string directory) con
 	const std::filesystem::path workingDirectory{directory};
 	for(auto const& dir_entry : std::filesystem::directory_iterator(workingDirectory)){
 		try{
-			projects.push_back(readFile(dir_entry.path().string()));
+			projects.push_back(readProjectFile(dir_entry.path().string()));
 		}
 		catch(std::exception& e){
 			++filesThatCouldNotBeRead;
@@ -142,7 +211,7 @@ std::vector<ProjectPtr> FileIOManager::readDirectory (std::string directory) con
 
 bool FileIOManager::writeProject(const Project& project, std::string path) const{
 	if(path.empty()){
-		path = saveDirectory;
+		path = projectDirectory;
 		path += project.getName();
 		path += ".json";
 	}
@@ -151,32 +220,87 @@ bool FileIOManager::writeProject(const Project& project, std::string path) const
 			return false;
 	}
 
-	if(saveFormat){
-		return saveFormat->write(path, project);
+	if(projectFormat){
+		return projectFormat->write(path, project);
+	}
+	else
+		return false;
+}
+bool FileIOManager::writeSettings(const Settings& settings, std::string path) const{
+	if(path.empty()){
+		path = settingsPath;
+	}
+	else{
+		if(!std::filesystem::exists(path))
+			return false;
+	}
+
+	if(settingsFormat){
+		return settingsFormat->write(path, settings);
 	}
 	else
 		return false;
 }
 
-std::string_view FileIOManager::getDirectory() const {
-	return saveDirectory;
+std::string FileIOManager::getHomeDirectory() const {
+	return homeDirectory;
 }
+std::string FileIOManager::getProjectDirectory() const {
+	return projectDirectory;
+}
+std::string FileIOManager::getSettingsPath() const {
+	return settingsPath;
+}
+bool FileIOManager::setHomeDirectory(std::string path){
 
-bool FileIOManager::setDirectory(std::string path){
+	bool homeDirectoryExists{false};
+
 	// Ensure backslash
 	if(path.back() != '\\' && path.back() != '/'){
 		path += "/";
 	}
 
 	if(std::filesystem::exists(path)){
-		saveDirectory = path;
+		homeDirectory = path;
+		homeDirectoryExists = true;
+	}
+	// Create directory if it does not exist
+	else{
+		try{
+			if(std::filesystem::create_directory(path)){
+				homeDirectory = path;
+				homeDirectoryExists = true;
+			}
+			else
+				return false;
+		}
+		catch(std::filesystem::filesystem_error& e){
+			return false;
+		}
+	}
+
+	if(homeDirectoryExists){
+		settingsPath = homeDirectory + "Settings.json";
+		return ensureSettingsFileExists();
+	}
+	else
+		return false;
+}
+bool FileIOManager::setProjectDirectory(std::string path){
+	// Ensure backslash
+	if(path.back() != '\\' && path.back() != '/'){
+		path += "/";
+	}
+
+	if(std::filesystem::exists(path)){
+		projectDirectory = path;
 		return true;
 	}
 	// Create directory if it does not exist
 	else{
 		try{
 			if(std::filesystem::create_directory(path)){
-				saveDirectory = path;
+				projectDirectory = path;
 				return true;
 			}
 			else
@@ -187,7 +311,15 @@ bool FileIOManager::setDirectory(std::string path){
 		}
 	}
 }
-
+bool FileIOManager::ensureSettingsFileExists(){
+	if(std::filesystem::exists(settingsPath)){
+		return true;
+	}
+	// Create file if it does not exist
+	else{
+		return writeSettings(Settings{getProjectDirectory()});
+	}
+}
 
 
 

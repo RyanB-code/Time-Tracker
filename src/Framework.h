@@ -9,8 +9,7 @@
 class Framework{
 public:
     Framework(  std::shared_ptr<ProjectManager> manager1, 
-                std::shared_ptr<FileIOManager> manager2, 
-                std::shared_ptr<Settings> setSettings
+                std::shared_ptr<FileIOManager>  manager2 
             );
     ~Framework();
 
