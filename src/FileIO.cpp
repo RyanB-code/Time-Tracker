@@ -169,8 +169,13 @@ std::shared_ptr<Settings> FileIOManager::readSettingsFile(std::string path) cons
 		return nullptr;
 
 	if(settingsFormat){ 
-		std::shared_ptr<Settings> settingsBuffer { new Settings {settingsFormat->read(path)}};
-		return settingsBuffer;
+		try{
+			Settings settingsBuffer {settingsFormat->read(path)};
+			return std::make_shared<Settings>(settingsBuffer);
+		}
+		catch(std::exception& e){
+			return nullptr;
+		}
     }
     else
         return nullptr;
@@ -281,7 +286,7 @@ bool FileIOManager::setHomeDirectory(std::string path){
 
 	if(homeDirectoryExists){
 		settingsPath = homeDirectory + "Settings.json";
-		return ensureSettingsFileExists();
+		return true;
 	}
 	else
 		return false;
@@ -311,15 +316,7 @@ bool FileIOManager::setProjectDirectory(std::string path){
 		}
 	}
 }
-bool FileIOManager::ensureSettingsFileExists(){
-	if(std::filesystem::exists(settingsPath)){
-		return true;
-	}
-	// Create file if it does not exist
-	else{
-		return writeSettings(Settings{getProjectDirectory()});
-	}
-}
+
 
 
 

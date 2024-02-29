@@ -8,7 +8,9 @@ int main(int argc, char* argv[]) {
 	// to create an entire new object and class to do what can be done.
 
 	#ifdef __linux__
-		std::string homeDirectory {"/usr/local/share/projects/Time-Tracker/Test-Directory/"};
+		//std::string homeDirectory {"/usr/local/share/projects/Time-Tracker/Test-Directory/"};
+		//std::string projDirectory {homeDirectory + "Projects/"};
+		std::string homeDirectory {"/usr/local/bin/time-tracker-files/"};
 		std::string projDirectory {homeDirectory + "Projects/"};
 	#endif
 
@@ -23,8 +25,9 @@ int main(int argc, char* argv[]) {
 		std::shared_ptr<ProjectManager> 		projectManager 	{ new ProjectManager };
 		std::shared_ptr<FileIOManager> 			fileManager 	{ new FileIOManager{ jsonFormat, settingsJson} };
 
-		fileManager->setProjectDirectory(projDirectory);
 		fileManager->setHomeDirectory(homeDirectory);
+		fileManager->setProjectDirectory(projDirectory);
+
 
 		Framework handler {projectManager, fileManager};
 
