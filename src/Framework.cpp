@@ -57,7 +57,17 @@ bool Framework::setup(){
 
     // Read settings file
     if(!settings){
-        settings = fileManager->readSettingsFile();
+        std::shared_ptr<Settings> settingsBuffer {fileManager->readSettingsFile()};
+
+        if(!settingsBuffer){
+            // Need to create settings if failed to read
+            settings = std::make_shared<Settings>(Settings{fileManager->getProjectDirectory()});
+
+            if(!fileManager->writeSettings(*settings.get()))
+                return false;
+        }
+        else
+            settings = settingsBuffer;
     }
 
     if(settings && fileManager){

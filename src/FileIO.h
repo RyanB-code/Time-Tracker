@@ -75,9 +75,6 @@ private:
 
     std::shared_ptr<ProjectFormatter>   projectFormat{};
     std::shared_ptr<SettingsFormatter>  settingsFormat{};
-
-    bool ensureSettingsFileExists ();
-
 };
 
 
