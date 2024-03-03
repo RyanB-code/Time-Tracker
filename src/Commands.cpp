@@ -486,3 +486,19 @@ bool SetProjectDirectory::execute(std::string arg){
     else
         return false;
 }
+ClearScreen::ClearScreen(std::string command)
+:   Command{command}
+{
+    this->description = "Clears the screen.\n";
+}
+bool ClearScreen::execute(std::string arg){
+    #ifdef __linux__
+    system("clear -x");
+    #endif
+
+    #ifdef _Win32
+    system("cls");
+    #endif
+
+    return true;
+}
