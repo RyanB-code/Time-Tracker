@@ -21,8 +21,31 @@ bool Framework::run(){
         std::getline(std::cin, input);
 
         if(input == "exit"){
-            exit = true;
-            break;
+            // Check if there is a running timer
+            ProjectPtr selectedProj {projectManager->getProject()};
+            if(selectedProj){
+                if(selectedProj->isTimerRunning()){
+                    std::cout << "\tThere is a running timer for \"" << selectedProj->getName() << "\".\n\t"
+                          << "Do you wish to exit without saving? [y/N]>";
+                    std::string exitInput;
+                    std::getline(std::cin, exitInput);
+
+                    if(exitInput == "y" || exitInput == "Y"){
+                        exit = true;
+                        break;
+                    }
+                    else
+                        input = ""; // Continue as normal
+                }
+                else{
+                    exit = true;
+                    break;
+                }
+            }
+            else{
+                exit = true;
+                break;
+            }
         }
 
         // Argument Buffers
