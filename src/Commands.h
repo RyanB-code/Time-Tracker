@@ -152,3 +152,9 @@ public:
 
     bool execute(std::string arg="") override;
 };
+class ClearScreen : public Command{
+public:
+    ClearScreen(std::string command);
+    
+    bool execute(std::string arg="") override;
+};

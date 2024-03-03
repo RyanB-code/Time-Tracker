@@ -101,6 +101,7 @@ bool Framework::setup(){
     std::unique_ptr<SetVerbose>             setVerbose      { new SetVerbose            {"set-verbose",         settings}};
     std::unique_ptr<SetHourOffset>          setHourOffset   { new SetHourOffset         {"set-hour-offset",     settings}};
     std::unique_ptr<SetProjectDirectory>    setProjDirec    { new SetProjectDirectory   {"set-proj-dir",        settings}};
+    std::unique_ptr<ClearScreen>            clearScreen     { new ClearScreen           {"clr"}};
 
 
     addCommand(std::move(deselectProject));
@@ -117,7 +118,7 @@ bool Framework::setup(){
     addCommand(std::move(setVerbose));
     addCommand(std::move(setHourOffset));
     addCommand(std::move(setProjDirec));
-
+    addCommand(std::move(clearScreen));
 
     return true;
 }
