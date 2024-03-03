@@ -194,7 +194,17 @@ std::ostringstream Project::printAllEntries() const {
 		os << "\n" << std::format("{:-<100}", '-') << "\n";
 		for (const auto& t : entries) {
 			os << std::format("{:<20}", t->printDate());
-			os << std::format("{:<20}", t->getName());
+
+			// Shorten lengthy names when displaying
+			std::string fullName {t->getName()};
+			if(fullName.length() > 19){
+				std::string shortName {fullName.substr(0,16)};
+				shortName += "...";
+				os << std::format("{:<20}", shortName);
+			}
+			else
+				os << std::format("{:<20}", fullName);
+			
 			os << std::format("{:<20}", t->printStartTime(), 2);
 			os << std::format("{:<20}", t->printEndTime(), 2);
 			os << std::format("{:<20}", t->printDuration(), 2);
