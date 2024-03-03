@@ -98,9 +98,7 @@ bool Framework::setup(){
     std::unique_ptr<Print>                  print           { new Print                 {"print",               projectManager, fileManager, settings}};
     std::unique_ptr<Save>                   save            { new Save                  {"save",                projectManager, fileManager, settings}};
     std::unique_ptr<RefreshSettings>        refreshSettings { new RefreshSettings       {"refresh-settings",    settings, fileManager}};
-    std::unique_ptr<SetVerbose>             setVerbose      { new SetVerbose            {"set-verbose",         settings}};
-    std::unique_ptr<SetHourOffset>          setHourOffset   { new SetHourOffset         {"set-hour-offset",     settings}};
-    std::unique_ptr<SetProjectDirectory>    setProjDirec    { new SetProjectDirectory   {"set-proj-dir",        settings}};
+    std::unique_ptr<Set>                    set             { new Set                   {"set",                 settings}};
     std::unique_ptr<ClearScreen>            clearScreen     { new ClearScreen           {"clr"}};
 
 
@@ -115,9 +113,7 @@ bool Framework::setup(){
     addCommand(std::move(isRunning));
     addCommand(std::move(save));
     addCommand(std::move(refreshSettings));
-    addCommand(std::move(setVerbose));
-    addCommand(std::move(setHourOffset));
-    addCommand(std::move(setProjDirec));
+    addCommand(std::move(set));
     addCommand(std::move(clearScreen));
 
     return true;
@@ -139,16 +135,11 @@ void Framework::handleArguments(std::vector<std::string>& args){
         }
         return;
     }
-
     // Initial lookup of first command only
     if(commands.contains(args[0])){
-        // If command exists, then pass the next argument
-        // Currently only handles 1 argument
-        if(args.size() > 1) 
-            commands.at(args[0])->execute(args[1]);
-        else    
-            commands.at(args[0])->execute();
-
+        std::string command {args[0]};
+        args.erase(args.begin());
+        commands.at(command)->execute(args);
     }
     else
         std::cout << "\t\"" << args[0] << "\" is not a valid command.\n"; 

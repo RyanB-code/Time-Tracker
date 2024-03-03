@@ -9,7 +9,7 @@ public:
     Command(std::string text);
     ~Command();
 
-    virtual bool execute(std::string arg="") = 0;
+    virtual bool execute(std::vector<std::string> args) = 0;
     std::string getCommand() const;
     std::string getDescription() const;
 private:
@@ -30,25 +30,25 @@ class SelectProject : public ProjectCommand{
 public:
     SelectProject(std::string command, std::weak_ptr<ProjectManager> manager);
 
-    bool execute(std::string arg="") override;
+    bool execute(std::vector<std::string> args) override;
 };
 class DeselectProject : public ProjectCommand{
 public:
     DeselectProject(std::string command, std::weak_ptr<ProjectManager> manager);
 
-    bool execute(std::string arg="") override;
+    bool execute(std::vector<std::string> args) override;
 };
 class ListProjects : public ProjectCommand{
 public:
     ListProjects(std::string command, std::weak_ptr<ProjectManager> manager);
 
-    bool execute(std::string arg="") override;
+    bool execute(std::vector<std::string> args) override;
 };
 class CreateProject : public ProjectCommand{
 public:
     CreateProject(std::string command, std::weak_ptr<ProjectManager> manager);
 
-    bool execute(std::string arg="") override; 
+    bool execute(std::vector<std::string> args) override;
 };
 class DeleteProject : public ProjectCommand{
 public:
@@ -56,25 +56,25 @@ public:
 
     DeleteProject(std::string command, std::weak_ptr<ProjectManager> manager1, std::weak_ptr<FileIOManager> manager2);
 
-    bool execute(std::string arg="") override; 
+    bool execute(std::vector<std::string> args) override;
 };
 class StartTimer : public ProjectCommand{
 public:
     StartTimer(std::string command, std::weak_ptr<ProjectManager> manager);
 
-    bool execute(std::string arg="") override; 
+    bool execute(std::vector<std::string> args) override;
 };
 class EndTimer : public ProjectCommand{
 public:
     EndTimer(std::string command, std::weak_ptr<ProjectManager> manager);
 
-    bool execute(std::string arg="") override; 
+    bool execute(std::vector<std::string> args) override;
 };
 class IsRunning : public ProjectCommand{
 public:
     IsRunning(std::string command, std::weak_ptr<ProjectManager> manager);
 
-    bool execute(std::string arg="") override; 
+    bool execute(std::vector<std::string> args) override;
 };
 
 
@@ -98,7 +98,7 @@ public:
             std::weak_ptr<Settings> setSettings
         );
     
-    bool execute(std::string arg="") override;
+    bool execute(std::vector<std::string> args) override;
 };
 
 class Print : public Command {
@@ -113,7 +113,7 @@ public:
             std::shared_ptr<Settings> setSettings
         );
     
-    bool execute(std::string arg="") override;
+    bool execute(std::vector<std::string> args) override;
 };
 
 class RefreshSettings : public Command{
@@ -124,37 +124,22 @@ public:
 
     RefreshSettings(std::string command, std::weak_ptr<Settings> setSettings, std::weak_ptr<FileIOManager> manager);
 
-    bool execute(std::string arg="") override;
+    bool execute(std::vector<std::string> args) override;
 
 };
 
-class SetVerbose : public Command{
+class Set : public Command {
 public:
     std::weak_ptr<Settings> settings;
 
-    SetVerbose(std::string command, std::weak_ptr<Settings> setSettings);
+    Set(std::string command, std::weak_ptr<Settings> setSettings);
 
-    bool execute(std::string arg="") override;
+    bool execute(std::vector<std::string> args);
 };
-class SetHourOffset : public Command{
-public:
-    std::weak_ptr<Settings> settings;
 
-    SetHourOffset(std::string command, std::weak_ptr<Settings> setSettings);
-
-    bool execute(std::string arg="") override;
-};
-class SetProjectDirectory : public Command{
-public:
-    std::weak_ptr<Settings> settings;
-
-    SetProjectDirectory(std::string command, std::weak_ptr<Settings> setSettings);
-
-    bool execute(std::string arg="") override;
-};
 class ClearScreen : public Command{
 public:
     ClearScreen(std::string command);
-    
-    bool execute(std::string arg="") override;
+
+    bool execute(std::vector<std::string> args) override;
 };
