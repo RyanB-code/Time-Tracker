@@ -104,6 +104,8 @@ bool Framework::setup(){
     addCommand(std::move(save));
     addCommand(std::move(set));
     addCommand(std::move(clearScreen));
+    
+    handleSettingsFile(settingsPath);
 
     // Iterate through directory and populate project manager
     std::vector<ProjectPtr> projectBuffer { fileManager->readDirectory(settings->getProjectDirectory())};
@@ -112,8 +114,6 @@ bool Framework::setup(){
             projectManager->addProject(proj);
         }
     }
-    
-    handleSettingsFile(settingsPath);
 
     return true;
 }
