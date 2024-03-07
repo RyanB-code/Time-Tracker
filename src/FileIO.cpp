@@ -89,59 +89,10 @@ Project JsonFormat::read(std::string path) const{
 
 
 
-SettingsFormatter::SettingsFormatter(){
-
-}
-SettingsFormatter::~SettingsFormatter(){
-
-}
-SettingsJsonFormat::SettingsJsonFormat(){
-
-}
-SettingsJsonFormat::~SettingsJsonFormat(){
-
-}
-bool SettingsJsonFormat::write (std::string path, const Settings& settings) const{
- 	json j{ };
-    j["verbose"] = settings.getVerbose();
-    j["hour-offset"] = settings.getHourOffset();
-    j["project-directory"] = settings.getProjectDirectory();
-
-    // Write to file here
-    std::ofstream file{path};
-    file << std::setw(1) << std::setfill('\t') << j;
-    file.close();
-
-    return true;
-}
-Settings SettingsJsonFormat::read(std::string path) const{
-
-	std::ifstream inputFile{ path, std::ios::in };
-    json j = json::parse(inputFile);
-
-    bool verboseBuffer;
-    int hourOffsetBuffer;
-    std::string projectDirectoryBuffer;
-
-    j.at("verbose").get_to(verboseBuffer);
-	j.at("hour-offset").get_to(hourOffsetBuffer);
-    j.at("project-directory").get_to(projectDirectoryBuffer);
-
-	return Settings {projectDirectoryBuffer, verboseBuffer, hourOffsetBuffer};
-}
-
-
-
-
-
-
-
-
-
-
-FileIOManager::FileIOManager(std::shared_ptr<ProjectFormatter> setProjFormat, std::shared_ptr<SettingsFormatter> setSettingsFormat)
-	: projectFormat { setProjFormat }, settingsFormat{ setSettingsFormat }
+FileIOManager::FileIOManager(std::shared_ptr<ProjectFormatter> setProjFormat)
+	: projectFormat { setProjFormat }
 {
+
 }
 FileIOManager::~FileIOManager(){
 
@@ -159,38 +110,9 @@ ProjectPtr FileIOManager::readProjectFile(std::string path) const{
 
     return nullptr;
 }
-std::shared_ptr<Settings> FileIOManager::readSettingsFile(std::string path) const{
-
-	if(path.empty()){
-		path = settingsPath;
-	}
-
-	if(!std::filesystem::exists(path))
-		return nullptr;
-
-	if(settingsFormat){ 
-		try{
-			Settings settingsBuffer {settingsFormat->read(path)};
-			return std::make_shared<Settings>(settingsBuffer);
-		}
-		catch(std::exception& e){
-			return nullptr;
-		}
-    }
-    else
-        return nullptr;
-
-    return nullptr;
-}
-
 std::vector<ProjectPtr> FileIOManager::readDirectory (std::string directory) const{
-	if(directory.empty()){
-		directory = projectDirectory;
-	}
-	else{
-		if(!std::filesystem::exists(directory))
-			return std::vector<ProjectPtr>{};		// Should find better way to signal the directory is bad 
-	}
+	if(!std::filesystem::exists(directory))
+		return std::vector<ProjectPtr>{};		// Should find better way to signal the directory is bad 
 
 	int filesThatCouldNotBeRead{0};
 
@@ -214,110 +136,27 @@ std::vector<ProjectPtr> FileIOManager::readDirectory (std::string directory) con
 	return projects;
 }
 
-bool FileIOManager::writeProject(const Project& project, std::string path) const{
-	if(path.empty()){
-		path = projectDirectory;
-		path += project.getName();
-		path += ".json";
+bool FileIOManager::writeProject(const Project& project, std::string directory) const{
+
+	// Ensure backslash
+	if(directory.back() != '\\' && directory.back() != '/'){
+		directory += "/";
 	}
-	else{
-		if(!std::filesystem::exists(path))
+
+	if(!std::filesystem::exists(directory))
 			return false;
-	}
+
+	std::string fullProjectPath { directory + std::string{project.getName()} + ".json"};
 
 	if(projectFormat){
-		return projectFormat->write(path, project);
+		return projectFormat->write(fullProjectPath, project);
 	}
 	else
 		return false;
 }
-bool FileIOManager::writeSettings(const Settings& settings, std::string path) const{
-	if(path.empty()){
-		path = settingsPath;
-	}
-	else{
-		if(!std::filesystem::exists(path))
-			return false;
-	}
-
-	if(settingsFormat){
-		return settingsFormat->write(path, settings);
-	}
-	else
-		return false;
+bool FileIOManager::deleteProject(std::string path) const {
+	return std::filesystem::remove(path);
 }
-
-std::string FileIOManager::getHomeDirectory() const {
-	return homeDirectory;
-}
-std::string FileIOManager::getProjectDirectory() const {
-	return projectDirectory;
-}
-std::string FileIOManager::getSettingsPath() const {
-	return settingsPath;
-}
-bool FileIOManager::setHomeDirectory(std::string path){
-
-	bool homeDirectoryExists{false};
-
-	// Ensure backslash
-	if(path.back() != '\\' && path.back() != '/'){
-		path += "/";
-	}
-
-	if(std::filesystem::exists(path)){
-		homeDirectory = path;
-		homeDirectoryExists = true;
-	}
-	// Create directory if it does not exist
-	else{
-		try{
-			if(std::filesystem::create_directory(path)){
-				homeDirectory = path;
-				homeDirectoryExists = true;
-			}
-			else
-				return false;
-		}
-		catch(std::filesystem::filesystem_error& e){
-			return false;
-		}
-	}
-
-	if(homeDirectoryExists){
-		settingsPath = homeDirectory + "Settings.json";
-		return true;
-	}
-	else
-		return false;
-}
-bool FileIOManager::setProjectDirectory(std::string path){
-	// Ensure backslash
-	if(path.back() != '\\' && path.back() != '/'){
-		path += "/";
-	}
-
-	if(std::filesystem::exists(path)){
-		projectDirectory = path;
-		return true;
-	}
-	// Create directory if it does not exist
-	else{
-		try{
-			if(std::filesystem::create_directory(path)){
-				projectDirectory = path;
-				return true;
-			}
-			else
-				return false;
-		}
-		catch(std::filesystem::filesystem_error& e){
-			return false;
-		}
-	}
-}
-
-
 
 
 namespace FileIO{
