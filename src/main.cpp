@@ -8,10 +8,10 @@ int main(int argc, char* argv[]) {
 	// to create an entire new object and class to do what can be done.
 
 	#ifdef __linux__
-		//std::string homeDirectory {"/usr/local/share/projects/Time-Tracker/Test-Directory/"};
-		//std::string projDirectory {homeDirectory + "Projects/"};
-		std::string homeDirectory {"/usr/local/bin/time-tracker-files/"};
-		std::string projDirectory {homeDirectory + "Projects/"};
+		std::string projDir {"/usr/local/share/projects/Time-Tracker/Test-Directory/"};
+		std::string settingsPath {projDir + ".timetrackerrc"};
+		//std::string home {getenv("HOME")};
+		//std::string settingsPath { home + "/.timetrackerrc"};
 	#endif
 
 	#ifdef _Win32
@@ -21,15 +21,10 @@ int main(int argc, char* argv[]) {
 
 	try{
 		std::shared_ptr<JsonFormat> 			jsonFormat 		{ new JsonFormat };
-		std::shared_ptr<SettingsJsonFormat>		settingsJson	{ new SettingsJsonFormat };
 		std::shared_ptr<ProjectManager> 		projectManager 	{ new ProjectManager };
-		std::shared_ptr<FileIOManager> 			fileManager 	{ new FileIOManager{ jsonFormat, settingsJson} };
+		std::shared_ptr<FileIOManager> 			fileManager 	{ new FileIOManager{jsonFormat} };
 
-		fileManager->setHomeDirectory(homeDirectory);
-		fileManager->setProjectDirectory(projDirectory);
-
-
-		Framework handler {projectManager, fileManager};
+		Framework handler {projectManager, fileManager, settingsPath, projDir};
 
 		if(handler.setup()){
 			handler.run();
