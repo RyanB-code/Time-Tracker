@@ -9,7 +9,9 @@
 class Framework{
 public:
     Framework(  std::shared_ptr<ProjectManager> manager1, 
-                std::shared_ptr<FileIOManager>  manager2 
+                std::shared_ptr<FileIOManager>  manager2,
+                std::string                     setSettingsPath,
+                std::string                     defaultProjectDirectory
             );
     ~Framework();
 
@@ -24,5 +26,8 @@ private:
     std::shared_ptr<FileIOManager>      fileManager;
     std::shared_ptr<Settings>           settings;
 
+    std::string settingsPath;
+
     void handleArguments(std::vector<std::string>& args);
+    void handleSettingsFile(std::string path);
 };

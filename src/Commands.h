@@ -52,9 +52,10 @@ public:
 };
 class DeleteProject : public ProjectCommand{
 public:
-    std::weak_ptr<FileIOManager> fileManager;
+    std::weak_ptr<FileIOManager>    fileManager;
+    std::weak_ptr<Settings>         settings;
 
-    DeleteProject(std::string command, std::weak_ptr<ProjectManager> manager1, std::weak_ptr<FileIOManager> manager2);
+    DeleteProject(std::string command, std::weak_ptr<ProjectManager> manager1, std::weak_ptr<FileIOManager> manager2, std::weak_ptr<Settings> set);
 
     bool execute(std::vector<std::string> args) override;
 };
@@ -115,19 +116,6 @@ public:
     
     bool execute(std::vector<std::string> args) override;
 };
-
-class RefreshSettings : public Command{
-public:
-    std::weak_ptr<Settings> settings;
-    std::weak_ptr<FileIOManager> fileManager;
-
-
-    RefreshSettings(std::string command, std::weak_ptr<Settings> setSettings, std::weak_ptr<FileIOManager> manager);
-
-    bool execute(std::vector<std::string> args) override;
-
-};
-
 class Set : public Command {
 public:
     std::weak_ptr<Settings> settings;

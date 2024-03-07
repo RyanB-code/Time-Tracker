@@ -2,10 +2,11 @@
 
 using json = nlohmann::json;
 
-Framework::Framework(std::shared_ptr<ProjectManager> manager1, std::shared_ptr<FileIOManager> manager2)
-    : projectManager{manager1}, fileManager{manager2}
+Framework::Framework(std::shared_ptr<ProjectManager> manager1, std::shared_ptr<FileIOManager> manager2, std::string setSettingsPath, std::string defaultProjectDirectory)
+    : projectManager{manager1}, fileManager{manager2}, settingsPath{setSettingsPath}
 {
-    
+    settings = std::make_shared<Settings>(Settings {defaultProjectDirectory});
+
 }
 Framework::~Framework(){
     
@@ -52,12 +53,10 @@ bool Framework::run(){
         std::vector<std::string> arguments;
         std::stringstream inputStream{};
         
-
-        // Add to argument list
         inputStream << input;
         std::string buffer;
-        while (inputStream >> std::quoted(buffer)) {
-            arguments.push_back(buffer);
+        while (inputStream >> std::quoted(buffer)) {    // Separate by quotes or spaces
+            arguments.push_back(buffer);                // Add to argument list
         }
 
         // Handle commands
@@ -78,38 +77,7 @@ bool Framework::addCommand(std::unique_ptr<Command> command){
 }
 bool Framework::setup(){
 
-    // Read settings file
-    if(!settings){
-        std::shared_ptr<Settings> settingsBuffer {fileManager->readSettingsFile()};
-
-        if(!settingsBuffer){
-            // Need to create settings if failed to read
-            settings = std::make_shared<Settings>(Settings{fileManager->getProjectDirectory()});
-
-            if(!fileManager->writeSettings(*settings.get()))
-                return false;
-        }
-        else
-            settings = settingsBuffer;
-    }
-
-    if(settings && fileManager){
-        Timestamp::setHourOffset(settings->getHourOffset());
-    }
-    else{
-        return false;
-    }
-
-    // Iterate through directory and populate project manager
-    std::vector<ProjectPtr> projectBuffer { fileManager->readDirectory()};
-    if(!projectBuffer.empty()){
-        for(auto& proj : projectBuffer){
-            projectManager->addProject(proj);
-        }
-    }
-
-
-    // Add commands
+     // Add commands
     std::unique_ptr<DeselectProject>        deselectProject { new DeselectProject       {"desel",               projectManager}};
     std::unique_ptr<SelectProject>          selectProject   { new SelectProject         {"sel",                 projectManager}};
     std::unique_ptr<ListProjects>           listProjects    { new ListProjects          {"ls",                  projectManager}};
@@ -117,10 +85,9 @@ bool Framework::setup(){
     std::unique_ptr<IsRunning>              isRunning       { new IsRunning             {"is-running",          projectManager}};
     std::unique_ptr<StartTimer>             startTimer      { new StartTimer            {"start",               projectManager}};
     std::unique_ptr<EndTimer>               endTimer        { new EndTimer              {"stop",                projectManager}};
-    std::unique_ptr<DeleteProject>          deleteProject   { new DeleteProject         {"delproj",             projectManager, fileManager}};
+    std::unique_ptr<DeleteProject>          deleteProject   { new DeleteProject         {"delproj",             projectManager, fileManager, settings}};
     std::unique_ptr<Print>                  print           { new Print                 {"print",               projectManager, fileManager, settings}};
     std::unique_ptr<Save>                   save            { new Save                  {"save",                projectManager, fileManager, settings}};
-    std::unique_ptr<RefreshSettings>        refreshSettings { new RefreshSettings       {"refresh-settings",    settings, fileManager}};
     std::unique_ptr<Set>                    set             { new Set                   {"set",                 settings}};
     std::unique_ptr<ClearScreen>            clearScreen     { new ClearScreen           {"clr"}};
 
@@ -135,9 +102,18 @@ bool Framework::setup(){
     addCommand(std::move(print));
     addCommand(std::move(isRunning));
     addCommand(std::move(save));
-    addCommand(std::move(refreshSettings));
     addCommand(std::move(set));
     addCommand(std::move(clearScreen));
+
+    // Iterate through directory and populate project manager
+    std::vector<ProjectPtr> projectBuffer { fileManager->readDirectory(settings->getProjectDirectory())};
+    if(!projectBuffer.empty()){
+        for(auto& proj : projectBuffer){
+            projectManager->addProject(proj);
+        }
+    }
+    
+    handleSettingsFile(settingsPath);
 
     return true;
 }
@@ -166,4 +142,33 @@ void Framework::handleArguments(std::vector<std::string>& args){
     }
     else
         std::cout << "\t\"" << args[0] << "\" is not a valid command.\n"; 
+}
+
+void Framework::handleSettingsFile(std::string path){
+    if(std::filesystem::exists(path)){
+        std::ifstream settingsFile {path}; 
+        std::string line;
+        while (std::getline(settingsFile, line))
+        {
+            std::vector<std::string> arguments;             // Parsed line
+
+            std::stringstream inputStream{};
+            inputStream << line;
+            std::string buffer;
+            while (inputStream >> std::quoted(buffer)) {    // Separate by quotes or spaces
+                arguments.push_back(buffer);                // Add to argument list
+            }
+
+            if(!arguments.empty()){
+                // Do not process # comment lines
+                if(!arguments[0].starts_with("#"))
+                    handleArguments(arguments);             // Apply command
+            }
+        }
+    }
+    else{
+        std::ofstream newSettings {path, std::ios::trunc};
+        newSettings << "# Time Tracker Configuration File\n# Any commands entered here will be executed upon each startup" << std::endl;
+        newSettings.close();
+    }
 }
