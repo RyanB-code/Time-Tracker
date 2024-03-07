@@ -12,6 +12,7 @@ int main(int argc, char* argv[]) {
 		std::string settingsPath {projDir + ".timetrackerrc"};
 		//std::string home {getenv("HOME")};
 		//std::string settingsPath { home + "/.timetrackerrc"};
+		//std::string projDir {home + "/Documents/Time-Tracker/"};
 	#endif
 
 	#ifdef _Win32
