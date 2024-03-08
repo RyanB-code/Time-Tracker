@@ -391,6 +391,7 @@ bool Set::execute(std::vector<std::string> args){
             try{
                 int offset {std::stoi(args[1])};
                 set->setHourOffset(offset);
+                Timestamp::setHourOffset(offset);
                 return true;
             }
             catch(std::exception& e){
