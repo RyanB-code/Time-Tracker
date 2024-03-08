@@ -387,7 +387,7 @@ bool Set::execute(std::vector<std::string> args){
             }
 
         }
-        else if(args[0] == "hour-offset"){
+        else if(args[0] == "hour-offset" && args.size() > 1){
             try{
                 int offset {std::stoi(args[1])};
                 set->setHourOffset(offset);
