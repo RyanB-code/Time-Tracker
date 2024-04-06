@@ -236,31 +236,6 @@ bool EndTimer::execute(std::vector<std::string> args){
     else
         return false;
 }
-IsRunning::IsRunning(std::string command, std::weak_ptr<ProjectManager> manager)
-    : ProjectCommand(command, manager)
-{
-    this->description = "Check if a timer is running for either selected project or project with the given name.\n";
-}
-bool IsRunning::execute(std::vector<std::string> args){
-    if(std::shared_ptr<ProjectManager> manager = projectManager.lock() ){
-        if(manager->getProject()){
-            if(manager->getProject()->isTimerRunning()){
-                std::cout << "\tThere is a timer running.\n";
-                return true;
-            }
-            else{
-                std::cout << "\tNo timer is running for the selected project.\n";
-                return false;
-            }
-        }
-        else{
-            std::cout << "\tThere is no project selected.\n";
-            return false;
-        }
-    }
-    else
-        return false;
-}
 
 FileIOCommand::FileIOCommand(std::string command, std::weak_ptr<FileIOManager> manager)
     : Command {command}, fileManager{manager}

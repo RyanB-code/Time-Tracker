@@ -82,7 +82,6 @@ bool Framework::setup(){
     std::unique_ptr<SelectProject>          selectProject   { new SelectProject         {"sel",                 projectManager}};
     std::unique_ptr<ListProjects>           listProjects    { new ListProjects          {"ls",                  projectManager}};
     std::unique_ptr<CreateProject>          createProject   { new CreateProject         {"mkproj",              projectManager}};
-    std::unique_ptr<IsRunning>              isRunning       { new IsRunning             {"is-running",          projectManager}};
     std::unique_ptr<StartTimer>             startTimer      { new StartTimer            {"start",               projectManager}};
     std::unique_ptr<EndTimer>               endTimer        { new EndTimer              {"stop",                projectManager}};
     std::unique_ptr<DeleteProject>          deleteProject   { new DeleteProject         {"delproj",             projectManager, fileManager, settings}};
@@ -100,7 +99,6 @@ bool Framework::setup(){
     addCommand(std::move(startTimer));
     addCommand(std::move(endTimer));
     addCommand(std::move(print));
-    addCommand(std::move(isRunning));
     addCommand(std::move(save));
     addCommand(std::move(set));
     addCommand(std::move(clearScreen));
