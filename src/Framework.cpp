@@ -130,7 +130,22 @@ void Framework::handleArguments(std::vector<std::string>& args){
 
         // Iterate through commands list and print command and description
         for(auto i{commands.begin()}; i != commands.end(); ++i){
-            std::cout << std::format("\t{:20}\t{}", i->second->getCommand(), i->second->getDescription());
+
+            // Buffer the output of the description accordingly to add padding to newlines
+            std::string padding {"                                "};     // 32 spaces
+            std::string formattedDescription {i->second->getDescription()};
+            int charNum { 0 };
+            for(char& c : formattedDescription){
+                ++charNum;
+                if(c == '\n' && charNum != formattedDescription.size()){
+                    formattedDescription.insert(charNum, padding);
+                    charNum += padding.size();
+                }
+            }
+
+            // Display output
+            std::cout << std::format("\t{:20}\n", i->second->getCommand());
+            std::cout << std::format("\t{:20}\t{}", " ", formattedDescription);
         }
         return;
     }

@@ -8,7 +8,7 @@ int main(int argc, char* argv[]) {
 	// to create an entire new object and class to do what can be done.
 
 	#ifdef __linux__
-		std::string projDir {"/usr/local/share/projects/Time-Tracker/Test-Directory/"};
+		std::string projDir {"/mnt/NAS/1-Project-Related/Project-Source-Directories/Time-Tracker/Test-Directory/"};
 		std::string settingsPath {projDir + ".timetrackerrc"};
 		//std::string home {getenv("HOME")};
 		//std::string settingsPath { home + "/.timetrackerrc"};
@@ -16,8 +16,8 @@ int main(int argc, char* argv[]) {
 	#endif
 
 	#ifdef _Win32
-		std::string projectPath { /*INPUT DESIRED SAVE DIRECTORY HERE*/};
-		std::string settingsFile { /*INPUT DESIRED SETTINGS PATH HERE*/};
+		std::string projDir { /*INPUT DESIRED SAVE DIRECTORY HERE*/};
+		std::string settingsPath { /*INPUT DESIRED SETTINGS PATH HERE*/};
 	#endif
 
 	try{
