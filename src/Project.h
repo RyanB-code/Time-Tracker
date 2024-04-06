@@ -48,6 +48,8 @@ public:
 
 	bool startTimer(std::string name="Unnamed Entry");
 	bool endTimer();
+	std::shared_ptr<Timestamp> getRunningTimerStartTime() const;
+
 
 	std::ostringstream	printAllEntries() const;
 	std::string			printTotalTime() const;

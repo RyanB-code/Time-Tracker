@@ -176,6 +176,15 @@ bool Project::endTimer() {
 
 	return false;
 }
+std::shared_ptr<Timestamp> Project::getRunningTimerStartTime() const{
+	if(isTimerRunning()){
+		Timestamp startTime {runningEntry->getRawStartTime()};
+		return std::make_shared<Timestamp>(startTime);
+	}
+	else{
+		return nullptr;
+	}
+}
 
 std::ostringstream Project::printAllEntries() const {
 
