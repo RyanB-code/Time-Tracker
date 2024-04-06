@@ -71,13 +71,6 @@ public:
 
     bool execute(std::vector<std::string> args) override;
 };
-class IsRunning : public ProjectCommand{
-public:
-    IsRunning(std::string command, std::weak_ptr<ProjectManager> manager);
-
-    bool execute(std::vector<std::string> args) override;
-};
-
 
 class FileIOCommand : public Command {
 public:
