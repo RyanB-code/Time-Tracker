@@ -82,7 +82,17 @@ bool ListProjects::execute(std::vector<std::string> args){
         }
         else if(args[0] == "-e"){
             if(manager->getProject() ){
-                std::cout << manager->getProject()->printAllEntries().str();
+                // Indent for every newline
+                std::string formatted {manager->getProject()->printAllEntries().str()};
+                int charNum { 0 };
+                for(char& c : formatted){
+                    ++charNum;
+                    if(c == '\n' && charNum != formatted.size()){
+                        formatted.insert(charNum, "\t");
+                    }
+                }
+                std::cout << "\t" << formatted;
+
                 return true;
             }
             else{
