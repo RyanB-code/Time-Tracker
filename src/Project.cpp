@@ -194,15 +194,15 @@ std::ostringstream Project::printAllEntries() const {
 		os << "There are no entries for this project.\n";
 	}
 	else {
-		os << std::format("{:<20}", "Date");
+		os << std::format("{:<14}", "Date");
 		os << std::format("{:<20}", "Name");
-		os << std::format("{:<20}", "Start Time");
-		os << std::format("{:<20}", "End Time");
-		os << std::format("{:<20}", "Duration");
+		os << std::format("{:<11}", "Start");
+		os << std::format("{:<11}", "End");
+		os << std::format("{:<11}", "Duration");
 
-		os << "\n" << std::format("{:-<100}", '-') << "\n";
+		os << "\n" << std::format("{:-<64}", '-') << "\n";
 		for (const auto& t : entries) {
-			os << std::format("{:<20}", t->printDate());
+			os << std::format("{:14}", t->printDate());
 
 			// Shorten lengthy names when displaying
 			std::string fullName {t->getName()};
@@ -214,9 +214,9 @@ std::ostringstream Project::printAllEntries() const {
 			else
 				os << std::format("{:<20}", fullName);
 			
-			os << std::format("{:<20}", t->printStartTime(), 2);
-			os << std::format("{:<20}", t->printEndTime(), 2);
-			os << std::format("{:<20}", t->printDuration(), 2);
+			os << std::format("{:<11}", t->printStartTime().substr(0, 8));
+			os << std::format("{:<11}", t->printEndTime().substr(0, 8));
+			os << std::format("{:<11}", t->printDuration().substr(0, 8));
 			os << std::endl;
 		}
 		
