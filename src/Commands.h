@@ -7,7 +7,7 @@
 class Command{
 public:
     Command(std::string text);
-    ~Command();
+    virtual ~Command();
 
     virtual bool execute(std::vector<std::string> args) = 0;
     std::string getCommand() const;
@@ -23,7 +23,7 @@ public:
     std::weak_ptr<ProjectManager> projectManager;
 
     ProjectCommand(std::string command, std::weak_ptr<ProjectManager> manager);
-    ~ProjectCommand();
+    virtual ~ProjectCommand();
 };
 
 class SelectProject : public ProjectCommand{
@@ -77,7 +77,7 @@ public:
     std::weak_ptr<FileIOManager> fileManager;
 
     FileIOCommand(std::string command, std::weak_ptr<FileIOManager> manager);
-    ~FileIOCommand();
+    virtual ~FileIOCommand();
 };
 
 class Save : public Command {
