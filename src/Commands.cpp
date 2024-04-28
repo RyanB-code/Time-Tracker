@@ -319,7 +319,7 @@ bool Print::execute(std::vector<std::string> args){
     else if(args[0] == "--total-time"){
         if(std::shared_ptr<ProjectManager> manager = projectManager.lock() ){
             if(manager->getProject()){
-                std::cout << "\tTotal time for this project is: " << manager->getProject()->printTotalTime() <<"  [HH:MM:SS]\n";
+                std::cout << "\tTotal time for this project is: " << manager->getProject()->printTotalTime().substr(0,8) <<"  [HH:MM:SS]\n";
                 return true;
             }
             else{
@@ -364,36 +364,43 @@ bool Print::execute(std::vector<std::string> args){
     else if(args[0] == "--time"){
         Timestamp now;
         now.stamp();
-        std::cout << "\t" << now.printTime() << " " << now.printDate() << std::endl;
+        std::cout << "\t" << now.printTime().substr(0, 8) << " " << now.printDate() << std::endl;
         return true;
     }
     else if(args[0] == "--runtime"){
-        if(std::shared_ptr<ProjectManager> manager = projectManager.lock() ){
-            if(manager->getProject()){
-                if(manager->getProject()->getRunningTimerStartTime()){
-                    Timestamp now;
-                    now.stamp();
+        if(std::shared_ptr<ProjectManager> manager = projectManager.lock()){
 
                     Timer duration { manager->getProject()->getRunningTimerStartTime()->getRawTime()};
                     duration.end(now.getRawTime());
 
-                    std::cout << "\tRuntime for timer is " << duration.printDuration() << "\n";
-                    return true;
+                if(manager->getProject()){
+                    if(manager->getProject()->getRunningTimerStartTime()){
+                        Timestamp now;
+                        now.stamp();
+
+                        Timer duration { manager->getProject()->getRunningTimerStartTime()->getRawTime()};
+                        duration.end(now.getRawTime() + std::chrono::hours(settingsLock->getHourOffset()));
+
+                        std::cout << "\tRuntime for timer is " << duration.printDuration().substr(0, 8) << "\n";
+                        return true;
+                    }
+                    else{   // No timer running
+                        std::cout << "\tNo timer is running for the selected project.\n";
+                        return false;
+                    }
                 }
-                else{
-                    std::cout << "\tNo timer is running for the selected project.\n";
+                else{ // No Project Selected
+                    std::cout << "\tThere is no project selected.\n";
                     return false;
                 }
             }
-            else{
-                std::cout << "\tThere is no project selected.\n";
+            else    // Couldn't lock settings
                 return false;
-            }
         }
-        else
+        else        // Couldn't lock Project Manager
             return false;
     }
-    else{
+    else{   // No arguments matched
         std::cout << "\tInvalid argument.\n";
         return false;
     }
