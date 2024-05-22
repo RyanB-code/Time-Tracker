@@ -2,10 +2,24 @@
 
 #include <iostream>
 
-int main(int argc, char* argv[]) {	
+int main(int argc, char **argv) {	
 
 	// Main() will work as my assembler because I do not wish
 	// to create an entire new object and class to do what can be done.
+
+	// Handle arguments
+	if(argc > 1){
+		std::vector<std::string> args(argv, argv + argc);
+		// Display version information
+		if(args.at(1) == "--version"){
+			std::cout << "\tTime Tracker by Bradley Ryan\n\tVersion 0.1.0" << std::endl;
+			return 0;
+		}
+		else{
+			std::cout << "\tInvalid argument." << std::endl;
+			return -1;
+		}
+	}
 
 	#ifdef __linux__
 		std::string projDir {"/mnt/NAS/1-Project-Related/Project-Source-Directories/Time-Tracker/Test-Directory/"};
