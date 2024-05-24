@@ -1,4 +1,5 @@
 #include "Framework.h"
+#include "Config.h"
 
 #include <iostream>
 
@@ -12,7 +13,10 @@ int main(int argc, char **argv) {
 		std::vector<std::string> args(argv, argv + argc);
 		// Display version information
 		if(args.at(1) == "--version"){
-			std::cout << "\tTime Tracker by Bradley Ryan\n\tVersion 0.1.0" << std::endl;
+			std::cout << "\tTime Tracker by Bradley Ryan\n\tVersion " <<
+			TimeTracker_VERSION_MAJOR << "." <<
+			TimeTracker_VERSION_MINOR << "." <<
+			TimeTracker_VERSION_PATCH << std::endl;
 			return 0;
 		}
 		else{

@@ -1,6 +1,5 @@
-include_directories(${EXE_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} )
 
-add_executable(${EXE_NAME}  Commands.cpp 
+add_executable(${PROJECT_NAME}  Commands.cpp 
         FileIO.cpp 
         Framework.cpp 
         main.cpp 
@@ -8,3 +7,5 @@ add_executable(${EXE_NAME}  Commands.cpp
         Settings.cpp 
         Timing.cpp
     )
+
+target_include_directories(${PROJECT_NAME} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR} )
