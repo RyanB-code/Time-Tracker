@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/time-tracker.dir/Commands.cpp.o CMakeFiles/time-tracker.dir/FileIO.cpp.o CMakeFiles/time-tracker.dir/Framework.cpp.o CMakeFiles/time-tracker.dir/main.cpp.o CMakeFiles/time-tracker.dir/Project.cpp.o CMakeFiles/time-tracker.dir/Settings.cpp.o CMakeFiles/time-tracker.dir/Timing.cpp.o -o ../../bin/time-tracker 

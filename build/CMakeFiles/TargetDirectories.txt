@@ -1,7 +1,0 @@
-/mnt/NAS/1-Project-Related/Project-Source-Directories/Time-Tracker/build/CMakeFiles/edit_cache.dir
-/mnt/NAS/1-Project-Related/Project-Source-Directories/Time-Tracker/build/CMakeFiles/rebuild_cache.dir
-/mnt/NAS/1-Project-Related/Project-Source-Directories/Time-Tracker/build/src/CMakeFiles/time-tracker.dir
-/mnt/NAS/1-Project-Related/Project-Source-Directories/Time-Tracker/build/src/CMakeFiles/edit_cache.dir
-/mnt/NAS/1-Project-Related/Project-Source-Directories/Time-Tracker/build/src/CMakeFiles/rebuild_cache.dir
-/mnt/NAS/1-Project-Related/Project-Source-Directories/Time-Tracker/build/include/CMakeFiles/edit_cache.dir
-/mnt/NAS/1-Project-Related/Project-Source-Directories/Time-Tracker/build/include/CMakeFiles/rebuild_cache.dir
