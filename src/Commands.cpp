@@ -370,8 +370,7 @@ bool Print::execute(std::vector<std::string> args){
     else if(args[0] == "--runtime"){
         if(std::shared_ptr<ProjectManager> manager = projectManager.lock()){
 
-                    Timer duration { manager->getProject()->getRunningTimerStartTime()->getRawTime()};
-                    duration.end(now.getRawTime());
+            if(std::shared_ptr<Settings> settingsLock = settings.lock()){
 
                 if(manager->getProject()){
                     if(manager->getProject()->getRunningTimerStartTime()){
