@@ -8,7 +8,7 @@ set(C_STANDARD_REQUIRED         True)
 set (EXECUTABLE_OUTPUT_PATH     "${CMAKE_SOURCE_DIR}/bin/")
 set (EXE_NAME                   "time-tracker")
 
-project(TimeTracker VERSION 1.1.0)
+project(TimeTracker VERSION 1.1.1)
 
 configure_file(src/Config.h.in Config.h)
 
