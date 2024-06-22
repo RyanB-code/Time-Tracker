@@ -312,7 +312,7 @@ Print::Print(     std::string command,
             fileManager{setFileManager}, 
             settings{setSettings}
 {
-    this->description = "<arg>\n--version Prints version information\n--total-time Print total time of selected project\n--settings Print settings\n--is-running Show if a timer is running\n--time Shows current clock time\n--runtime Shows duration of current timer\n";
+    this->description = "<arg>\n--version \tPrints version information\n--total-time \tPrint total time of selected project\n--settings \tPrint settings\n--is-running \tShow if a timer is running\n--time \t\tShows current clock time\n--runtime \tShows duration of current timer\n";
 }
 bool Print::execute(std::vector<std::string> args){
     if(args.empty()){
@@ -418,7 +418,7 @@ bool Print::execute(std::vector<std::string> args){
 Set::Set(std::string command,  std::weak_ptr<Settings> setSettings)
 :   Command{command}, settings{setSettings}
 {
-    this->description = "<setting> <value>\n--hour-offset <int> Sets the clock offset\n--verbose <bool> True or false to set the mode of the application,\n--project-directory <string> Sets the project directory\n--entry-name-width <int> Sets the width of the name of entries";
+    this->description = "<setting> <value>\n--hour-offset <int> \t\tSets the clock offset\n--verbose <bool> \t\tTrue or false to set the mode of the application,\n--project-directory <string> \tSets the project directory\n--entry-name-width <int> \tSets the width of the name of entries\n";
 }
 bool Set::execute(std::vector<std::string> args){
     if(std::shared_ptr<Settings> set = settings.lock()){
