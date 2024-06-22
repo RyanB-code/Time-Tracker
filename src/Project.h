@@ -51,7 +51,7 @@ public:
 	std::shared_ptr<Timestamp> getRunningTimerStartTime() const;
 
 
-	std::ostringstream	printAllEntries() const;
+	std::ostringstream	printAllEntries(uint8_t entryNameWidth=20) const;
 	std::string			printTotalTime() const;
 
 private:

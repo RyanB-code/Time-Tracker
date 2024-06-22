@@ -1,5 +1,8 @@
 #include "Project.h"
 #include "FileIO.h"
+#include "Settings.h"
+
+#include <Config.h>
 
 #include <sstream>
 #include <format>
@@ -20,12 +23,14 @@ protected:
 
 class ProjectCommand : public Command{
 public:
-    std::weak_ptr<ProjectManager> projectManager;
+    std::weak_ptr<ProjectManager>   projectManager;
 
     ProjectCommand(std::string command, std::weak_ptr<ProjectManager> manager);
     virtual ~ProjectCommand();
 };
 
+
+// MARK: Project Command
 class SelectProject : public ProjectCommand{
 public:
     SelectProject(std::string command, std::weak_ptr<ProjectManager> manager);
@@ -38,9 +43,11 @@ public:
 
     bool execute(std::vector<std::string> args) override;
 };
-class ListProjects : public ProjectCommand{
+class List : public ProjectCommand{
 public:
-    ListProjects(std::string command, std::weak_ptr<ProjectManager> manager);
+    std::weak_ptr<Settings> settings;
+
+    List(std::string command, std::weak_ptr<ProjectManager> manager, std::weak_ptr<Settings> setSettings);
 
     bool execute(std::vector<std::string> args) override;
 };
@@ -72,6 +79,8 @@ public:
     bool execute(std::vector<std::string> args) override;
 };
 
+
+// MARK: Regular Commands
 class FileIOCommand : public Command {
 public:
     std::weak_ptr<FileIOManager> fileManager;
@@ -79,7 +88,6 @@ public:
     FileIOCommand(std::string command, std::weak_ptr<FileIOManager> manager);
     virtual ~FileIOCommand();
 };
-
 class Save : public Command {
 public:
     std::weak_ptr<ProjectManager> projectManager;

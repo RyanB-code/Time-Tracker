@@ -2,9 +2,11 @@
 
 using json = nlohmann::json;
 
-Settings::Settings(std::string setProject, bool setVerbose, int setHourOffset)
-    :  verbose { setVerbose },
-        hourOffset { setHourOffset }
+Settings::Settings(std::string setProject, bool setVerbose, int setHourOffset, uint8_t setEntryNameWidth)
+    :   verbose { setVerbose },
+        hourOffset { setHourOffset },
+        entryNameWidth {setEntryNameWidth}
+
 {
     if(!setProjectDirectory(setProject)){
         std::invalid_argument e{"Project directory could not be found/created."};
@@ -50,6 +52,10 @@ bool Settings::setProjectDirectory(std::string set){
         return false;
     }
 }
+void Settings::setEntryNameWidth (uint8_t set){
+    entryNameWidth = set;
+}
+
 bool Settings::getVerbose() const{
     return verbose;
 }
@@ -59,4 +65,8 @@ int Settings::getHourOffset() const{
 std::string Settings::getProjectDirectory() const{
     return projectDirectory;
 }
+uint8_t    Settings::getEntryNameWidth() const{
+    return entryNameWidth;
+}
+
 

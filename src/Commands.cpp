@@ -57,53 +57,56 @@ bool DeselectProject::execute(std::vector<std::string> args){
     else
         return false;
 }
-ListProjects::ListProjects(std::string command, std::weak_ptr<ProjectManager> manager)
-    : ProjectCommand(command, manager)
+List::List(std::string command, std::weak_ptr<ProjectManager> manager, std::weak_ptr<Settings> setSettings)
+    :   ProjectCommand(command, manager), settings{setSettings}
 {
     this->description = "<arg>\n-p Lists projects\n-e Lists entries of selected project.\n";
 }
-bool ListProjects::execute(std::vector<std::string> args){
-    if(std::shared_ptr<ProjectManager> manager = projectManager.lock() ){
-
-        // List all project names
-        if(args[0] == "-p"){
-            // Ensure map is not empty
-            if(manager->getAllProjectNames().empty()){
-                std::cout << "\tThere are no tracked projects.\n";
-                return true;
-            }
-            else{
-                std::cout << "Current Projects:\n";
-                for(std::string& s : manager->getAllProjectNames()){
-                    std::cout << '\t' << s << "\n";
+bool List::execute(std::vector<std::string> args){
+    if(std::shared_ptr<ProjectManager> manager = projectManager.lock()){
+        if(std::shared_ptr<Settings> set = settings.lock()){
+            // List all project names
+            if(args[0] == "-p"){
+                // Ensure map is not empty
+                if(manager->getAllProjectNames().empty()){
+                    std::cout << "\tThere are no tracked projects.\n";
+                    return true;
                 }
-                return true;
-            }
-        }
-        else if(args[0] == "-e"){
-            if(manager->getProject() ){
-                // Indent for every newline
-                std::string formatted {manager->getProject()->printAllEntries().str()};
-                int charNum { 0 };
-                for(char& c : formatted){
-                    ++charNum;
-                    if(c == '\n' && charNum != formatted.size()){
-                        formatted.insert(charNum, "\t");
+                else{
+                    std::cout << "Current Projects:\n";
+                    for(std::string& s : manager->getAllProjectNames()){
+                        std::cout << '\t' << s << "\n";
                     }
+                    return true;
                 }
-                std::cout << "\t" << formatted;
+            }
+            else if(args[0] == "-e"){
+                if(manager->getProject()){
+                    // Indent for every newline
+                    std::string formatted {manager->getProject()->printAllEntries(set->getEntryNameWidth()).str()};
+                    int charNum { 0 };
+                    for(char& c : formatted){
+                        ++charNum;
+                        if(c == '\n' && charNum != formatted.size()){
+                            formatted.insert(charNum, "\t");
+                        }
+                    }
+                    std::cout << "\t" << formatted;
 
-                return true;
+                    return true;
+                }
+                else{
+                    std::cout << "\tThere is no project selected.\n";
+                    return false;
+                }
             }
             else{
-                std::cout << "\tThere is no project selected.\n";
+                std::cout << "\tInvalid argument.\n";
                 return false;
             }
         }
-        else{
-            std::cout << "\tInvalid argument.\n";
+        else
             return false;
-        }
     }
     else    
         return false;
@@ -309,7 +312,7 @@ Print::Print(     std::string command,
             fileManager{setFileManager}, 
             settings{setSettings}
 {
-    this->description = "<arg>\n--total-time print total time of selected project\n--settings print settings\n--is-running for if a timer is running\n--time to show current clock time\n--runtime for duration of current timer\n";
+    this->description = "<arg>\n--version Prints version information\n--total-time Print total time of selected project\n--settings Print settings\n--is-running Show if a timer is running\n--time Shows current clock time\n--runtime Shows duration of current timer\n";
 }
 bool Print::execute(std::vector<std::string> args){
     if(args.empty()){
@@ -335,6 +338,7 @@ bool Print::execute(std::vector<std::string> args){
             std::cout << "\tProject Directory: \"" << set->getProjectDirectory() << "\"\n";
             std::cout << "\tHour Offset: " << set->getHourOffset() << "\n";
             std::cout << "\tVerbose Mode: " << std::boolalpha << set->getVerbose() << "\n";
+            std::cout << "\tEntry Name Text Box Width: " << (int)set->getEntryNameWidth() << "\n";
             return true;
         }
         else
@@ -399,6 +403,13 @@ bool Print::execute(std::vector<std::string> args){
         else        // Couldn't lock Project Manager
             return false;
     }
+    else if(args[0] == "--version"){
+       std::cout << "\tTime Tracker by Bradley Ryan\n\tVersion " <<
+			TimeTracker_VERSION_MAJOR << "." <<
+			TimeTracker_VERSION_MINOR << "." <<
+			TimeTracker_VERSION_PATCH << std::endl;
+        return true;
+    }
     else{   // No arguments matched
         std::cout << "\tInvalid argument.\n";
         return false;
@@ -407,7 +418,7 @@ bool Print::execute(std::vector<std::string> args){
 Set::Set(std::string command,  std::weak_ptr<Settings> setSettings)
 :   Command{command}, settings{setSettings}
 {
-    this->description = "<setting> <value>\n--hour-offset <int> Sets the clock offset\n--verbose <bool> True or false to set the mode of the application,\n--project-directory <string> Sets the project directory\n";
+    this->description = "<setting> <value>\n--hour-offset <int> Sets the clock offset\n--verbose <bool> True or false to set the mode of the application,\n--project-directory <string> Sets the project directory\n--entry-name-width <int> Sets the width of the name of entries";
 }
 bool Set::execute(std::vector<std::string> args){
     if(std::shared_ptr<Settings> set = settings.lock()){
@@ -448,6 +459,17 @@ bool Set::execute(std::vector<std::string> args){
             }
             else{
                 std::cout << "\tCould not set project save directory to \"" << args[1] << "\"\n";
+                return false;
+            }
+        }
+        else if(args[0] == "--entry-name-width"){
+            try{
+                int width {std::stoi(args[1])};
+                set->setEntryNameWidth(width);
+                return true;
+            }
+            catch(std::exception& e){
+                std::cout << "\tInvalid argument.\n";
                 return false;
             }
         }

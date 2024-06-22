@@ -21,7 +21,7 @@ bool Framework::run(){
         std::string input;
         std::getline(std::cin, input);
 
-        if(input == "exit"){
+        if(input == "exit" || input == "quit"){
             // Check if there is a running timer
             ProjectPtr selectedProj {projectManager->getProject()};
             if(selectedProj){
@@ -80,7 +80,7 @@ bool Framework::setup(){
      // Add commands
     std::unique_ptr<DeselectProject>        deselectProject { new DeselectProject       {"desel",               projectManager}};
     std::unique_ptr<SelectProject>          selectProject   { new SelectProject         {"sel",                 projectManager}};
-    std::unique_ptr<ListProjects>           listProjects    { new ListProjects          {"ls",                  projectManager}};
+    std::unique_ptr<List>                   list            { new List                  {"ls",                  projectManager, settings}};
     std::unique_ptr<CreateProject>          createProject   { new CreateProject         {"mkproj",              projectManager}};
     std::unique_ptr<StartTimer>             startTimer      { new StartTimer            {"start",               projectManager}};
     std::unique_ptr<EndTimer>               endTimer        { new EndTimer              {"stop",                projectManager}};
@@ -93,7 +93,7 @@ bool Framework::setup(){
 
     addCommand(std::move(deselectProject));
     addCommand(std::move(selectProject));
-    addCommand(std::move(listProjects));
+    addCommand(std::move(list));
     addCommand(std::move(createProject));
     addCommand(std::move(deleteProject));
     addCommand(std::move(startTimer));
