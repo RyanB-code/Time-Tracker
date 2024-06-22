@@ -186,7 +186,10 @@ std::shared_ptr<Timestamp> Project::getRunningTimerStartTime() const{
 	}
 }
 
-std::ostringstream Project::printAllEntries() const {
+std::ostringstream Project::printAllEntries(uint8_t entryNameWidth) const {
+
+	if(entryNameWidth < 20)
+		entryNameWidth = 20;
 
 	std::ostringstream os;
 
@@ -195,24 +198,25 @@ std::ostringstream Project::printAllEntries() const {
 	}
 	else {
 		os << std::format("{:<14}", "Date");
-		os << std::format("{:<20}", "Name");
+		os << std::format("{:<{}}", "Name", ++entryNameWidth);
 		os << std::format("{:<11}", "Start");
 		os << std::format("{:<11}", "End");
 		os << std::format("{:<11}", "Duration");
 
-		os << "\n" << std::format("{:-<64}", '-') << "\n";
+		// 44 is the number width of the text boxes to ensyure line is the same
+		os << "\n" << std::format("{:-<{}}", '-', (44+entryNameWidth)) << "\n";
 		for (const auto& t : entries) {
 			os << std::format("{:14}", t->printDate());
 
 			// Shorten lengthy names when displaying
 			std::string fullName {t->getName()};
-			if(fullName.length() > 19){
-				std::string shortName {fullName.substr(0,16)};
+			if(fullName.length() > (entryNameWidth-1)){
+				std::string shortName {fullName.substr(0,(entryNameWidth-4))};
 				shortName += "...";
-				os << std::format("{:<20}", shortName);
+				os << std::format("{:<{}}", shortName, entryNameWidth);
 			}
 			else
-				os << std::format("{:<20}", fullName);
+				os << std::format("{:<{}}", fullName, entryNameWidth);
 			
 			os << std::format("{:<11}", t->printStartTime().substr(0, 8));
 			os << std::format("{:<11}", t->printEndTime().substr(0, 8));
