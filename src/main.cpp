@@ -1,5 +1,5 @@
 #include "Framework.h"
-#include "Config.h"
+#include <Config.h>
 
 #include <iostream>
 
