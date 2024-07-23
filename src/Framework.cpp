@@ -1,11 +1,18 @@
 #include "Framework.h"
 
 using json = nlohmann::json;
+using namespace TimeTracker;
 
-Framework::Framework(std::shared_ptr<ProjectManager> manager1, std::shared_ptr<FileIOManager> manager2, std::string setSettingsPath, std::string defaultProjectDirectory)
-    : projectManager{manager1}, fileManager{manager2}, settingsPath{setSettingsPath}
+Framework::Framework(   std::shared_ptr<ProjectManager> setProjectManager, 
+                        std::shared_ptr<FileIOManager> setFileManager, 
+                        std::string setSettingsPath, 
+                        std::string setDefaultProjectDirectory
+                    )
+                    :   projectManager{setProjectManager}, 
+                        fileManager{setFileManager}, 
+                        settingsPath{setSettingsPath}
 {
-    settings = std::make_shared<Settings>(Settings {defaultProjectDirectory});
+    settings = std::make_shared<Settings>(Settings {setDefaultProjectDirectory});
 
 }
 Framework::~Framework(){
@@ -106,11 +113,15 @@ bool Framework::setup(){
     handleSettingsFile(settingsPath);
 
     // Iterate through directory and populate project manager
-    std::vector<ProjectPtr> projectBuffer { fileManager->readDirectory(settings->getProjectDirectory())};
-    if(!projectBuffer.empty()){
+    try{
+        std::vector<ProjectPtr> projectBuffer { fileManager->readDirectory(settings->getProjectDirectory())};
         for(auto& proj : projectBuffer){
             projectManager->addProject(proj);
         }
+    }
+    catch (const std::invalid_argument& e){
+        std::cerr << e.what();
+        return false;
     }
 
     return true;
@@ -132,7 +143,7 @@ void Framework::handleArguments(std::vector<std::string>& args){
             // Buffer the output of the description accordingly to add padding to newlines
             std::string padding {"                                "};     // 32 spaces
             std::string formattedDescription {i->second->getDescription()};
-            int charNum { 0 };
+            size_t charNum { 0 };
             for(char& c : formattedDescription){
                 ++charNum;
                 if(c == '\n' && charNum != formattedDescription.size()){
@@ -157,7 +168,7 @@ void Framework::handleArguments(std::vector<std::string>& args){
         std::cout << "\t\"" << args[0] << "\" is not a valid command.\n"; 
 }
 
-void Framework::handleSettingsFile(std::string path){
+void Framework::handleSettingsFile(const std::string& path){
     if(std::filesystem::exists(path)){
         std::ifstream settingsFile {path}; 
         std::string line;
@@ -184,4 +195,58 @@ void Framework::handleSettingsFile(std::string path){
         newSettings << "# Time Tracker Configuration File\n# Any commands entered here will be executed upon each startup" << std::endl;
         newSettings.close();
     }
+}
+std::string TimeTracker::determineSaveDirectory(){
+    std::string projectsDirectory   {};
+    std::string rcPath              {};
+
+    #if defined __linux__
+
+        #if defined DEBUG
+            projectsDirectory   = "/mnt/NAS/1-Project-Related/Project-Source-Directories/Time-Tracker/Test-Directory/";
+            rcPath              = projectsDirectory + ".timetracker-rc";
+        #elif defined RELEASE
+            std::string home {getenv("HOME")};
+            rcPath = home + "/.timetracker-rc";
+            projectsDirectory = home + "/Documents/Time-Tracker/";
+        #else
+            projectsDirectory = "";
+            rcPath = "";
+        #endif
+	#elif defined _Win32
+        projectsDirectory = "";
+        rcPath = "";
+	#else
+        projectsDirectory = "";
+        rcPath = "";
+    #endif
+    return projectsDirectory;
+}
+
+std::string TimeTracker::determineRCPath(){
+    std::string projectsDirectory   {};
+    std::string rcPath              {};
+
+    #if defined __linux__
+
+        #if defined DEBUG
+            projectsDirectory   = "/mnt/NAS/1-Project-Related/Project-Source-Directories/Time-Tracker/Test-Directory/";
+            rcPath              = projectsDirectory + ".timetracker-rc";
+        #elif defined RELEASE
+            std::string home {getenv("HOME")};
+            rcPath = home + "/.timetracker-rc";
+            projectsDirectory = home + "/Documents/Time-Tracker/";
+        #else
+            projectsDirectory = "";
+            rcPath = "";
+        #endif
+	#elif defined _Win32
+        projectsDirectory = "";
+        rcPath = "";
+	#else
+        projectsDirectory = "";
+        rcPath = "";
+    #endif
+
+    return rcPath;
 }
