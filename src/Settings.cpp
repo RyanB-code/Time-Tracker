@@ -1,11 +1,16 @@
 #include "Settings.h"
 
 using json = nlohmann::json;
+using namespace TimeTracker;
 
-Settings::Settings(std::string setProject, bool setVerbose, int setHourOffset, uint8_t setEntryNameWidth)
-    :   verbose { setVerbose },
-        hourOffset { setHourOffset },
-        entryNameWidth {setEntryNameWidth}
+Settings::Settings( std::string setProject, 
+                    bool setVerbose, 
+                    int setHourOffset, 
+                    uint8_t setEntryNameWidth
+                )
+                :   verbose         { setVerbose },
+                    hourOffset      { setHourOffset },
+                    entryNameWidth  {setEntryNameWidth}
 
 {
     if(!setProjectDirectory(setProject)){
@@ -34,23 +39,20 @@ bool Settings::setProjectDirectory(std::string set){
         projectDirectory = set;
         return true;
     }
-    else{
 
-        // Create directory if it does not exist
-        try{
-			if(std::filesystem::create_directory(set)){
-				projectDirectory = set;
-				return true;
-			}
-			else
-				return false;
-		}
-		catch(std::filesystem::filesystem_error& e){
-			return false;
-		}
-
+    // Create directory if it does not exist
+    try{
+        if(!std::filesystem::create_directory(set))
+            return false;
+        
+        projectDirectory = set;
+        return true;
+    }
+    catch(std::filesystem::filesystem_error& e){
         return false;
     }
+
+    return false;
 }
 void Settings::setEntryNameWidth (uint8_t set){
     entryNameWidth = set;
@@ -69,4 +71,37 @@ uint8_t    Settings::getEntryNameWidth() const{
     return entryNameWidth;
 }
 
+
+std::string TimeTracker::getVersion(){
+    std::ostringstream os;
+
+    #if defined RELEASE
+    os <<   TimeTracker_VERSION_MAJOR << "." <<
+            TimeTracker_VERSION_MINOR << "." <<
+            TimeTracker_VERSION_PATCH;
+    #elif defined DEBUG
+        os << "DEBUG";
+    #else
+        os << "NULL";
+    #endif
+
+    return os.str();
+}
+std::string TimeTracker::getAllProjectInfo(){
+    std::ostringstream os;
+    
+    os << "\tTime Tracker by Bradley Ryan\n\tVersion " << getVersion() << " - ";
+
+    #ifdef DEBUG
+        os << "Debug";
+    #endif
+
+    #ifdef RELEASE
+        os << "Release";
+    #endif
+
+    os << "\n\tBuilt on " << __TIMESTAMP__ << "\n"; 
+
+    return os.str();
+}
 

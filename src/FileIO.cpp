@@ -1,6 +1,7 @@
 #include "FileIO.h"
 
 using json = nlohmann::json;
+using namespace TimeTracker;
 
 ProjectFormatter::ProjectFormatter(){
 
@@ -16,33 +17,40 @@ JsonFormat::JsonFormat(){
 JsonFormat::~JsonFormat(){
 
 }
-bool JsonFormat::write(std::string path, const Project& project) const{
+bool JsonFormat::write(const std::string& path, const Project& project) const{
+	if(!std::filesystem::exists(path))
+		return false;
+
+	// Write basic information
     json j{
-		{"name", project.getName()},
+		{"name", 	project.getName()},
 		{"updated", project.getLastUpdated().printRaw()}
 	};
 
+	// Print all entries in the project
 	int i{ 0 };
 	nlohmann::json entries = nlohmann::json::array();
 	for (const auto& t : project.getEntries()) {
-		std::ostringstream s1; s1 << t->getRawStartTime();
-		std::ostringstream s2; s2 << t->getRawEndTime();
+		std::ostringstream startBuf, endBuf;
+		startBuf 	<< t->getRawStartTime();
+		endBuf 		<< t->getRawEndTime();
 
-		if (t->getName() == "Unnamed Entry") {
+		// If entry wasnt given a name, write by ID
+		if (t->getName() == ProjectHelper::UNNAMED_ENTRY) {
 			std::ostringstream name;
 			name << "Entry " << t->getID();
 
-			entries.push_back({ name.str(), s1.str(), s2.str() } );
+			entries.push_back({ name.str(), startBuf.str(), endBuf.str() } );
 		}
 		else
-			entries.push_back({ t->getName(), s1.str(), s2.str()});
+			entries.push_back({ t->getName(), startBuf.str(), endBuf.str() });
 
 		++i;
 	}
 
 	j["entries"] = entries;
-
-    // Write to file here
+	
+	// Write to file 
     std::ofstream file{path};
     file << std::setw(1) << std::setfill('\t') << j;
     file.close();
@@ -50,7 +58,10 @@ bool JsonFormat::write(std::string path, const Project& project) const{
     return true;
 }
 
-Project JsonFormat::read(std::string path) const{
+Project JsonFormat::read(const std::string& path) const{
+	if(!std::filesystem::exists(path))
+		throw std::invalid_argument("File cannot be found \"" + path + "\"\n");
+	
     Project project;
 
     std::ifstream inputFile{ path, std::ios::in };
@@ -97,25 +108,25 @@ FileIOManager::FileIOManager(std::shared_ptr<ProjectFormatter> setProjFormat)
 FileIOManager::~FileIOManager(){
 
 }
-ProjectPtr FileIOManager::readProjectFile(std::string path) const{
-	if(!std::filesystem::exists(path))
+ProjectPtr FileIOManager::readProjectFile(const std::string& path) const{
+	if(!std::filesystem::exists(path) || !projectFormat)
 		return nullptr;
 
-	if(projectFormat){ 
-		ProjectPtr projBuffer { new Project {projectFormat->read(path)}};
+	try{
+		ProjectPtr projBuffer { new Project {projectFormat->read(path)} };
 		return projBuffer;
-    }
-    else
-        return nullptr;
+	}
+	catch (std::invalid_argument& e){
+		std::cerr << e.what();
+		return nullptr;
+	}
 
-    return nullptr;
 }
-std::vector<ProjectPtr> FileIOManager::readDirectory (std::string directory) const{
+std::vector<ProjectPtr> FileIOManager::readDirectory (const std::string& directory) const{
 	if(!std::filesystem::exists(directory))
-		return std::vector<ProjectPtr>{};		// Should find better way to signal the directory is bad 
+		throw std::invalid_argument("File cannot be found \"" + directory + "\"\n");
 
 	int filesThatCouldNotBeRead{0};
-
 	std::vector<ProjectPtr> projects;
 	const std::filesystem::path workingDirectory{directory};
 	for(auto const& dir_entry : std::filesystem::directory_iterator(workingDirectory)){
@@ -136,35 +147,35 @@ std::vector<ProjectPtr> FileIOManager::readDirectory (std::string directory) con
 	return projects;
 }
 
-bool FileIOManager::writeProject(const Project& project, std::string directory) const{
+bool FileIOManager::writeProject(const std::string& directory, const Project& project) const{
+	std::string qualifiedDirectory {directory};
 
 	// Ensure backslash
 	if(directory.back() != '\\' && directory.back() != '/'){
-		directory += "/";
+		qualifiedDirectory += "/";
 	}
 
-	if(!std::filesystem::exists(directory))
+	if(!std::filesystem::exists(qualifiedDirectory))
 			return false;
 
-	std::string fullProjectPath { directory + std::string{project.getName()} + ".json"};
+	std::string fullProjectPath { qualifiedDirectory + std::string{project.getName()} + ".json"};
 
-	if(projectFormat){
-		return projectFormat->write(fullProjectPath, project);
-	}
-	else
+	if(!projectFormat)
 		return false;
+	
+	return projectFormat->write(fullProjectPath, project);
 }
-bool FileIOManager::deleteProject(std::string path) const {
+bool FileIOManager::deleteProject(const std::string& path) const {
 	return std::filesystem::remove(path);
 }
 
 
-namespace FileIO{
-    std::chrono::system_clock::time_point stringToTimepoint(const std::string& time) {
-        std::stringstream ss{ time };
-        std::tm _tm{};
-		_tm.tm_isdst = -1;
-       	ss >> std::get_time(&_tm, "%Y-%m-%d%n%H:%M:%S");
-	    return std::chrono::system_clock::from_time_t(std::mktime(&_tm));
+namespace TimeTracker::FileIO{
+    std::chrono::system_clock::time_point stringToTimepoint(const std::string& timeString) {
+        std::stringstream ss{ timeString };
+        std::tm time{};
+		time.tm_isdst = -1;
+       	ss >> std::get_time(&time, "%Y-%m-%d%n%H:%M:%S");
+	    return std::chrono::system_clock::from_time_t(std::mktime(&time));
     }
 }

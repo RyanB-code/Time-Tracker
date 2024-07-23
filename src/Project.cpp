@@ -1,5 +1,7 @@
 #include "Project.h"
 
+using namespace TimeTracker;
+
 ProjectEntry::ProjectEntry(const std::string& s) : name{s} {
 	setID();
 }
@@ -28,54 +30,50 @@ int ProjectEntry::setID(){
 Project::Project(const std::string& s) : name{ s } {
 	runningEntry.reset();
 }
-
 Project::~Project() {
 	entries.clear();
 }
 
-void Project::setName(const std::string& s){
-	name = s;
+void Project::setName(const std::string& setName){
+	name = setName;
 }
 std::string_view Project::getName() const{
 	return name;
 }
 
 bool Project::setLastUpdated(Timestamp& timestamp) {
-	if (timestamp.IsStamped()) {
-		lastUpdated = timestamp;
-		return true;
-	}
-	else
+	if (!timestamp.IsStamped())
 		return false;
+		
+	lastUpdated = timestamp;
+	return true;
 }
 Timestamp Project::getLastUpdated() const {
 	return lastUpdated;
 }
 bool Project::isTimerRunning() const{
-	if(runningEntry){
-		return runningEntry->IsRunning();
-	}
-	else
+	if(!runningEntry)
 		return false;
+
+	return runningEntry->IsRunning();
 }
 
 
 bool Project::addEntry(EntryPtr entry) {
-
-	// Only add if finished
-	if(entry->IsFinished()){
-		entries.push_back(entry);
-
-		// Updated lasUpdated time
-		Timestamp now {};
-		now.stamp();
-		setLastUpdated(now);
-
-		return true;
-	}
-	else
+	if(!entry->IsFinished())
 		return false;
-	/* If the timer is running, add it to the list of timers
+
+	entries.push_back(entry);
+
+	// Updated lasUpdated time
+	Timestamp now {};
+	now.stamp();
+	setLastUpdated(now);
+
+	return true;
+
+	// Meant to add to list of timers even if running
+	/*
 	if (entry->IsRunning()) 
 	{
 		if (!m_currentTimer) {
@@ -118,10 +116,10 @@ bool Project::addEntry(EntryPtr entry) {
 	}
 	else
 		return false;
-		*/
+	*/
 }
 bool Project::removeEntry(int id){
-	// Linear search. erase if IDs are the same
+	// Linear search. Erase if IDs are the same
 	for(std::vector<EntryPtr>::iterator it {entries.begin()}; it < entries.end(); ++it){
 		if(id == it->get()->getID()){
 			entries.erase(it);
@@ -142,96 +140,83 @@ const std::vector<EntryPtr>& Project::getEntries() const{
 
 
 bool Project::startTimer(std::string name) {
-
-	if (!runningEntry) {
-		ProjectEntry newTimer(name);
-		newTimer.start();
-		runningEntry = std::make_shared<ProjectEntry>(std::move(newTimer));
-		
-		return true;
-	}
-	else
+	if (runningEntry)	// Do not do anything if a timer is already running
 		return false;
-
-	return false;
+	
+	ProjectEntry newTimer(name);
+	newTimer.start();
+	runningEntry = std::make_shared<ProjectEntry>(std::move(newTimer));
+	
+	return true;
 }
 bool Project::endTimer() {
 
 	// If there is no timer tracked, return false
-	if (!runningEntry) {
+	if (!runningEntry) 
 		return false;
-	}
-	else {
-		// If a timer has been found, and it was successfully stopped, add to list of entries and reset tracker
-		if (runningEntry->end()) {
-			addEntry(runningEntry);
-			runningEntry.reset();
-			return true;
-		}
-		else {
-			// If the timer could not be stopped, return false;
-			return false;
-		}
+	
+	// If a timer has been found, and it was successfully stopped, add to list of entries and reset tracker
+	if (runningEntry->end()) {
+		addEntry(runningEntry);
+		runningEntry.reset();
+		return true;
 	}
 
+	// If the timer could not be stopped, return false;
 	return false;
 }
 std::shared_ptr<Timestamp> Project::getRunningTimerStartTime() const{
-	if(isTimerRunning()){
-		Timestamp startTime {runningEntry->getRawStartTime()};
-		return std::make_shared<Timestamp>(startTime);
-	}
-	else{
+	if(!isTimerRunning())
 		return nullptr;
-	}
+	
+	Timestamp startTime {runningEntry->getRawStartTime()};
+	return std::make_shared<Timestamp>(startTime);
 }
 
 std::ostringstream Project::printAllEntries(uint8_t entryNameWidth) const {
-
-	if(entryNameWidth < 20)
-		entryNameWidth = 20;
-
 	std::ostringstream os;
 
 	if (entries.empty()) {
 		os << "There are no entries for this project.\n";
+		return os;
 	}
-	else {
-		os << std::format("{:<14}", "Date");
-		os << std::format("{:<{}}", "Name", ++entryNameWidth);
-		os << std::format("{:<11}", "Start");
-		os << std::format("{:<11}", "End");
-		os << std::format("{:<11}", "Duration");
 
-		// 44 is the number width of the text boxes to ensyure line is the same
-		os << "\n" << std::format("{:-<{}}", '-', (44+entryNameWidth)) << "\n";
-		for (const auto& t : entries) {
-			os << std::format("{:14}", t->printDate());
+	if(entryNameWidth < 20)
+		entryNameWidth = 20;
 
-			// Shorten lengthy names when displaying
-			std::string fullName {t->getName()};
-			if(fullName.length() > (entryNameWidth-1)){
-				std::string shortName {fullName.substr(0,(entryNameWidth-4))};
-				shortName += "...";
-				os << std::format("{:<{}}", shortName, entryNameWidth);
-			}
-			else
-				os << std::format("{:<{}}", fullName, entryNameWidth);
-			
-			os << std::format("{:<11}", t->printStartTime().substr(0, 8));
-			os << std::format("{:<11}", t->printEndTime().substr(0, 8));
-			os << std::format("{:<11}", t->printDuration().substr(0, 8));
-			os << std::endl;
+	constexpr uint8_t dateWidth {14}, timestampWidth{11};
+
+	os << std::format("{:<{}}", "Date",		dateWidth);	
+	os << std::format("{:<{}}", "Name", 	++entryNameWidth); // Added one for spacer
+	os << std::format("{:<{}}", "Start", 	timestampWidth);
+	os << std::format("{:<{}}", "End", 		timestampWidth);
+	os << std::format("{:<{}}", "Duration", timestampWidth);
+
+	// 44 is the number width of the text boxes to ensure line of dashes is the same
+	os << "\n" << std::format("{:-<{}}", '-', (44+entryNameWidth)) << "\n";
+
+	for (const auto& t : entries) {
+		os << std::format("{:{}}", t->printDate(), dateWidth);
+		std::string name {t->getName()};
+
+		// Shorten lengthy names when displaying
+		if(name.length() > ((size_t)entryNameWidth-1)){
+			name = name.substr(0,(entryNameWidth-4)); // Minus 4 because emplacing ellipsis (3 chars) and then a space
+			name += "...";
 		}
-		
+
+		os << std::format("{:<{}}", name, entryNameWidth);
+		os << std::format("{:<{}}", t->printStartTime().substr(0, 8), 	timestampWidth);
+		os << std::format("{:<{}}", t->printEndTime().substr(0, 8), 	timestampWidth);
+		os << std::format("{:<{}}", t->printDuration().substr(0, 8), 	timestampWidth);
+		os << std::endl;
 	}
-	
+		
 	return os;
 }
 
 std::string	Project::printTotalTime() const {
 	std::chrono::system_clock::duration totalTime{};
-
 
 	if (entries.empty()) {
 		return "00:00:00";
@@ -256,7 +241,7 @@ ProjectManager::ProjectManager(){
 ProjectManager::~ProjectManager(){
 
 }
-ProjectPtr ProjectManager::getProject(){
+ProjectPtr ProjectManager::getProject() const{
 	if(ProjectPtr proj = selectedProject.lock()){
 		return proj;
 	}
@@ -286,7 +271,6 @@ ProjectPtr ProjectManager::findProject(std::string name) const{
 	catch (std::out_of_range& e){
 		return nullptr;
 	}
-	return nullptr;
 }
 bool ProjectManager::selectProject(std::string name){
 	try{
@@ -297,7 +281,6 @@ bool ProjectManager::selectProject(std::string name){
 		selectedProject.reset();
 		return false;
 	}
-	return false;
 }
 void ProjectManager::deselectProject() {
 	selectedProject.reset();
@@ -314,10 +297,9 @@ bool ProjectManager::addProject(ProjectPtr project){
 }
 
 bool ProjectManager::deleteProject(std::string name){
-	if(projects.contains(name)){
-		projects.erase(projects.find(name));
-		return true;
-	}
-	else
+	if(!projects.contains(name))
 		return false;
+	
+	projects.erase(projects.find(name));
+	return true;
 }

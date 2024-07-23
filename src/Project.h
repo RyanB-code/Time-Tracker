@@ -1,5 +1,4 @@
-#ifndef PROJECT_H
-#define PROJECT_H
+#pragma once
 
 #include "Timing.h"
 #include "json.h"
@@ -9,88 +8,83 @@
 #include <fstream>
 #include <map>
 
-class ProjectEntry : public Timer {
-public:
-	ProjectEntry(const std::string& s = "New Timer");
-	virtual ~ProjectEntry();
+namespace TimeTracker{
 
-	std::string_view 	getName() const;
-	void 				setName(const std::string& s);
+	namespace ProjectHelper{
+		constexpr std::string UNNAMED_ENTRY { "Unnamed Entry"};
+	}
+	class ProjectEntry : public Timer {
+	public:
+		ProjectEntry(const std::string& s=ProjectHelper::UNNAMED_ENTRY);
+		virtual ~ProjectEntry();
 
-	int					getID() const;
+		std::string_view 	getName() 	const;
+		int					getID() 	const;
 
-private:
-	std::string name{};
-	int id{};
+		void 				setName(const std::string&);
+	private:
+		std::string name{};
+		int id{};
 
-	int setID();
-};
+		int setID();
+	};
 
-using EntryPtr = std::shared_ptr<ProjectEntry>;
+	using EntryPtr = std::shared_ptr<ProjectEntry>;
 
+	class Project
+	{
+	public:
+		Project(const std::string& s = "New Project");
+		~Project();
 
+		void setName(const std::string& s);
 
-class Project
-{
-public:
-	Project(const std::string& s = "New Project");
-	~Project();
+		std::string_view 				getName() 					const;
+		Timestamp 						getLastUpdated() 			const;
+		const std::vector<EntryPtr>& 	getEntries() 				const;
+		std::shared_ptr<Timestamp> 		getRunningTimerStartTime() 	const;
 
-	void				setName(const std::string& s);
-	std::string_view 	getName() const;
+		bool startTimer(std::string name=ProjectHelper::UNNAMED_ENTRY);
+		bool endTimer();
 
-	Timestamp 	getLastUpdated() const;
-	bool isTimerRunning() const;
+		bool isTimerRunning() const;
 
-	bool addEntry(EntryPtr entry);
-	bool removeEntry(int id);
-	const std::vector<EntryPtr>& getEntries() const;
+		bool addEntry(EntryPtr entry);
+		bool removeEntry(int id);
 
-	bool startTimer(std::string name="Unnamed Entry");
-	bool endTimer();
-	std::shared_ptr<Timestamp> getRunningTimerStartTime() const;
+		std::ostringstream	printAllEntries(uint8_t entryNameWidth=20) const;
+		std::string			printTotalTime() const;
 
+	private:
+		std::string	 			name		{};
+		Timestamp 				lastUpdated	{};
+		std::vector<EntryPtr>	entries		{};
+		EntryPtr 				runningEntry{};
 
-	std::ostringstream	printAllEntries(uint8_t entryNameWidth=20) const;
-	std::string			printTotalTime() const;
+		bool setLastUpdated(Timestamp& timestamp);
+	};
 
-private:
-	std::string name{};
+	using ProjectPtr = std::shared_ptr<Project>;
 
-	Timestamp lastUpdated{};
+	class ProjectManager{
+	public:
+		ProjectManager();
+		~ProjectManager();
 
-	std::vector<EntryPtr> entries{};
-	EntryPtr runningEntry{};
+		ProjectPtr 									getProject()			const;
+		std::vector<std::string> 					getAllProjectNames() 	const;
+		std::vector<std::shared_ptr<const Project>> getAllProjects() 		const;
 
-	bool setLastUpdated(Timestamp& timestamp);
+		ProjectPtr findProject(std::string name) const;
 
-};
+		bool selectProject(std::string name);
+		void deselectProject();
 
-using ProjectPtr = std::shared_ptr<Project>;
+		bool addProject(ProjectPtr project);
+		bool deleteProject(std::string name);
+	private:
+		std::map<std::string, ProjectPtr> 	projects;
+		std::weak_ptr<Project> 				selectedProject;
+	};
 
-class ProjectManager{
-public:
-	ProjectManager();
-	~ProjectManager();
-
-	ProjectPtr getProject();
-	ProjectPtr findProject(std::string name) const;
-
-	std::vector<std::string> getAllProjectNames() const;
-	std::vector<std::shared_ptr<const Project>> getAllProjects() const;
-
-	bool selectProject(std::string name);
-	void deselectProject();
-
-	bool addProject(ProjectPtr project);
-	bool deleteProject(std::string name);
-
-
-private:
-
-	std::map<std::string, ProjectPtr> 	projects;
-	std::weak_ptr<Project> 				selectedProject;
-
-};
-
-#endif
+}
