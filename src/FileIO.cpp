@@ -24,7 +24,7 @@ bool JsonFormat::write(const std::string& path, const Project& project) const{
 	// Write basic information
     json j{
 		{"name", 	project.getName()},
-		{"updated", project.getLastUpdated().printRaw()}
+		{"updated", project.getLastUpdated().printTime()}
 	};
 
 	// Print all entries in the project
