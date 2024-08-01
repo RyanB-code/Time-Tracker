@@ -7,7 +7,7 @@
 #include <json.h>
 
 
-using timepoint = std::chrono::system_clock::time_point;
+using timepoint = std::chrono::zoned_time<std::chrono::_V2::system_clock::duration, const std::chrono::time_zone *>;
 using sysclock 	= std::chrono::system_clock;
 using ymd		= std::chrono::year_month_day;
 
@@ -17,11 +17,10 @@ public:
 	Timestamp(const timepoint& time);
 	virtual ~Timestamp();
 
-	virtual bool stamp(const timepoint& time = sysclock::now());
+	virtual bool stamp(const timepoint& time = std::chrono::zoned_time{std::chrono::current_zone(), std::chrono::system_clock::now()});
 	
 	bool IsStamped() 			const;
 
-	std::string printRaw()		const;
 	std::string printTime()		const;		// Prints the HH:MM::SS			(14:23:01)
 
 	std::string printDay()		const;
@@ -31,14 +30,9 @@ public:
 	timepoint	getRawTime()	const;
 	ymd			getRawYMD()		const;
 
-	static int 	getHourOffset();
-	static void setHourOffset(int offset);
-
 private:
 	timepoint time{};
 	bool m_isStamped{ false };
-
-	static inline int hourOffset{0};
 };
 
 
@@ -50,8 +44,8 @@ public:
 	Timer(const timepoint& start);
 	virtual ~Timer();
 
-	bool start	(const timepoint& time = sysclock::now());
-	bool end	(const timepoint& time = sysclock::now());
+	bool start	(const timepoint& time = std::chrono::zoned_time{std::chrono::current_zone(), std::chrono::system_clock::now()} );
+	bool end	(const timepoint& time = std::chrono::zoned_time{std::chrono::current_zone(), std::chrono::system_clock::now()} );
 
 	bool IsRunning()	const;
 	bool IsFinished()	const;
