@@ -12,7 +12,7 @@ Timestamp::~Timestamp(){
 
 bool Timestamp::stamp(const timepoint& timepoint) {	
 	if (!m_isStamped) {
-		time = timepoint + std::chrono::hours(hourOffset);
+		time = timepoint;
 		m_isStamped = true;
 		return true;
 	}
@@ -24,13 +24,16 @@ bool Timestamp::IsStamped() const{
 }
 
 
-std::string Timestamp::printRaw() const {
-	std::ostringstream os;
-	os << time;
-	return os.str();
-}
+
 std::string Timestamp::printTime() const {
-	return std::format("{:%H:%M:%OS}", time);
+	std::chrono::zoned_time zonedTime { std::chrono::current_zone(), time }; // Makes zoned time
+
+	// Needed to output the seconds as 2 digits instead of a float
+	std::string seconds {std::format("{:%S}", zonedTime)};
+	std::ostringstream formattedTime;
+	formattedTime << std::format("{:%H:%M:}", zonedTime) << seconds.substr(0,2);
+
+    return formattedTime.str();
 }
 
 std::string Timestamp::printDay() const {
@@ -44,18 +47,12 @@ std::string Timestamp::printDate() const {
 }
 
 timepoint Timestamp::getRawTime() const {
-	return time;
+	std::chrono::zoned_time zonedTime { std::chrono::current_zone(), time }; // Makes zoned time
+	return zonedTime;
 }
 ymd	Timestamp::getRawYMD() const {
-	std::chrono::year_month_day ymd{ std::chrono::floor<std::chrono::days>(time) };
+	std::chrono::year_month_day ymd{ std::chrono::floor<std::chrono::days>((std::chrono::time_point<std::chrono::system_clock>)time) };
 	return ymd;
-}
-int Timestamp::getHourOffset(){
-	return hourOffset;
-}
-void Timestamp::setHourOffset(int offset){
-	hourOffset = offset;
-	return;
 }
 
 
@@ -86,7 +83,7 @@ bool Timer::end(const timepoint& end) {
 
 	if (isRunning && !isFinished) {
 		endTime.stamp(end);
-		rawDuration = endTime.getRawTime() - startTime.getRawTime();
+		rawDuration = (std::chrono::time_point<std::chrono::system_clock>)endTime.getRawTime() - (std::chrono::time_point<std::chrono::system_clock>)startTime.getRawTime();
 		isFinished = true;
 		isRunning = false;
 		return true;

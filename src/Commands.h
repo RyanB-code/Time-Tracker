@@ -111,7 +111,7 @@ namespace TimeTracker{
         Print(  std::string                     command, 
                 std::weak_ptr<ProjectManager>   setProjManager, 
                 std::weak_ptr<FileIOManager>    setFileManager, 
-                std::weak_ptr<Settings>       setSettings
+                std::weak_ptr<Settings>         setSettings
             );
         
         bool execute(const std::vector<std::string>& args) override;

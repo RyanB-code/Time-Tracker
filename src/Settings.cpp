@@ -5,11 +5,9 @@ using namespace TimeTracker;
 
 Settings::Settings( std::string setProject, 
                     bool setVerbose, 
-                    int setHourOffset, 
                     uint8_t setEntryNameWidth
                 )
                 :   verbose         { setVerbose },
-                    hourOffset      { setHourOffset },
                     entryNameWidth  {setEntryNameWidth}
 
 {
@@ -23,9 +21,6 @@ Settings::~Settings(){
 }
 void Settings::setVerbose(bool set){
     verbose = set;
-}
-void Settings::setHourOffset(int set){
-    hourOffset = set;
 }
 bool Settings::setProjectDirectory(std::string set){
 
@@ -61,9 +56,6 @@ void Settings::setEntryNameWidth (uint8_t set){
 bool Settings::getVerbose() const{
     return verbose;
 }
-int Settings::getHourOffset() const{
-    return hourOffset;
-}
 std::string Settings::getProjectDirectory() const{
     return projectDirectory;
 }
@@ -90,7 +82,7 @@ std::string TimeTracker::getVersion(){
 std::string TimeTracker::getAllProjectInfo(){
     std::ostringstream os;
     
-    os << "\tTime Tracker by Bradley Ryan\n\tVersion " << getVersion() << " - ";
+    os << "Time Tracker by Bradley Ryan\nVersion " << getVersion() << " - ";
 
     #ifdef DEBUG
         os << "Debug";
@@ -100,7 +92,7 @@ std::string TimeTracker::getAllProjectInfo(){
         os << "Release";
     #endif
 
-    os << "\n\tBuilt on " << __TIMESTAMP__ << "\n"; 
+    os << "\nBuilt on " << __TIMESTAMP__ << "\n"; 
 
     return os.str();
 }

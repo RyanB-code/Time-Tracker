@@ -331,7 +331,6 @@ bool Print::execute(const std::vector<std::string>& args){
     }
     else if(args[0] == "--settings"){
         std::cout << "\tProject Directory: \""              << tempSettings->getProjectDirectory() << "\"\n";
-        std::cout << "\tHour Offset: "                      << tempSettings->getHourOffset() << "\n";
         std::cout << "\tVerbose Mode: " << std::boolalpha   << tempSettings->getVerbose() << "\n";
         std::cout << "\tEntry Name Text Box Width: "        << (int)tempSettings->getEntryNameWidth() << "\n";
         return true;
@@ -361,11 +360,8 @@ bool Print::execute(const std::vector<std::string>& args){
     else if(args[0] == "--runtime"){
         if(tempProjectManager->getProject()){
             if(tempProjectManager->getProject()->getRunningTimerStartTime()){
-                Timestamp now;
-                now.stamp();
-
                 Timer duration { tempProjectManager->getProject()->getRunningTimerStartTime()->getRawTime()};
-                duration.end(now.getRawTime() + std::chrono::hours(tempSettings->getHourOffset()));
+                duration.end();
 
                 std::cout << "\tRuntime for timer is " << duration.printDuration().substr(0, 8) << "\n";
                 return true;
@@ -393,7 +389,6 @@ Set::Set(std::string command,  std::weak_ptr<Settings> setSettings)
 :   Command{command}, settings{setSettings}
 {
     this->description = "<setting> <value>\n"
-                        "--hour-offset <int> \t\tSets the clock offset\n"
                         "--verbose <bool> \t\tTrue or false to set the mode of the application\n"
                         "--project-directory <string> \tSets the project directory\n"
                         "--entry-name-width <int> \tSets the width of the name of entries\n";
@@ -423,18 +418,6 @@ bool Set::execute(const std::vector<std::string>& args){
             return false;
         }
 
-    }
-    else if(args[0] == "--hour-offset" && args.size() > 1){
-        try{
-            int offset {std::stoi(args[1])};
-            tempSettings->setHourOffset(offset);
-            Timestamp::setHourOffset(offset);
-            return true;
-        }
-        catch(std::exception& e){
-            std::cerr << "\tInvalid argument.\n";
-            return false;
-        }
     }
     else if(args[0] == "--project-directory"){
         if(tempSettings->setProjectDirectory(args[1])){
