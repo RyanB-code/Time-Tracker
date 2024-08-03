@@ -102,9 +102,8 @@ bool List::execute(const std::vector<std::string>& args){
         size_t charNum { 0 };
         for(char& c : formatted){
             ++charNum;
-            if(c == '\n' && charNum != formatted.size()){
+            if(c == '\n' && charNum < formatted.size())
                 formatted.insert(charNum, "\t");
-            }
         }
         std::cout << "\t" << formatted;
         return true;
@@ -187,8 +186,13 @@ bool DeleteProject::execute(const std::vector<std::string>& args){
     fullProjectPath += projectName;
     fullProjectPath += ".json";
 
-    if(!tempFileManager->deleteProject(fullProjectPath) && tempProjectManager->deleteProject(projectName)){
+    if(!tempProjectManager->deleteProject(projectName)){
         std::cerr << "\tError deleting project \"" << projectName << "\"\n";
+        return false;
+    }
+
+    if(!tempFileManager->deleteProject(fullProjectPath)){
+        std::cerr << "\tError deleting project file \"" << fullProjectPath << "\"\n";
         return false;
     }
 
