@@ -187,7 +187,7 @@ std::ostringstream Project::printAllEntries(uint8_t entryNameWidth) const {
 	constexpr uint8_t dateWidth {14}, timestampWidth{11};
 
 	os << std::format("{:<{}}", "Date",		dateWidth);	
-	os << std::format("{:<{}}", "Name", 	++entryNameWidth); // Added one for spacer
+	os << std::format("{:<{}}", "Name", 	entryNameWidth); 
 	os << std::format("{:<{}}", "Start", 	timestampWidth);
 	os << std::format("{:<{}}", "End", 		timestampWidth);
 	os << std::format("{:<{}}", "Duration", timestampWidth);
