@@ -7,6 +7,7 @@
 #include "Commands.h"
 
 #include <json.h>
+#include <queue>
 
 namespace TimeTracker{
     class Framework{
@@ -29,10 +30,16 @@ namespace TimeTracker{
         std::shared_ptr<FileIOManager>      fileManager;
         std::shared_ptr<Settings>           settings;
 
+        std::queue<std::string>             commandQueue;
+
         std::string settingsPath;
 
-        void handleArguments    (std::vector<std::string>& args);
-        void handleSettingsFile (const std::string& path);
+        void    getInput            ();             // Displays prompt and waits for user input
+        int     handleArguments     ();             // Returns: 0 - normal, 1- exit,
+        void    handleSettingsFile  (const std::string& path);
+
+        void setupCommands();
+        bool confirmExit(); // Checks if there is a running timer before exit, returns true if should exit
     };
     
     std::string determineSaveDirectory();
