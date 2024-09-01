@@ -198,6 +198,49 @@ bool DeleteProject::execute(const std::vector<std::string>& args){
 
     return true;
 }
+Reload::Reload( std::string command, 
+                std::weak_ptr<ProjectManager>   setProjectManager, 
+                std::weak_ptr<FileIOManager>    setFileManager,
+                std::weak_ptr<Settings>         setSettings
+            )
+            :   ProjectCommand  { command, setProjectManager },
+                fileManager     { setFileManager },
+                settings        { setSettings }
+
+{
+    this->description = "Reloads projects from project directory\n";
+
+}
+Reload::~Reload(){
+
+}
+bool Reload::execute(const std::vector<std::string>& args){
+    std::shared_ptr<ProjectManager> tempProjectManager  = projectManager.lock();
+    std::shared_ptr<FileIOManager>  tempFileManager     = fileManager.lock();
+    std::shared_ptr<Settings>       tempSettings        = settings.lock();
+
+
+    if(!tempProjectManager || !tempFileManager || !tempSettings)
+        return false;
+
+
+    tempProjectManager->deselectProject();
+    tempProjectManager->clearProjects();
+
+    // Iterate through directory and populate project manager
+    try{
+        std::vector<ProjectPtr> projectBuffer { tempFileManager->readDirectory(tempSettings->getProjectDirectory())};
+        for(auto& proj : projectBuffer){
+            tempProjectManager->addProject(proj);
+        }
+    }
+    catch (const std::invalid_argument& e){
+        std::cerr << e.what();
+        return false;
+    }
+
+    return true;
+}
 StartTimer::StartTimer(std::string command, std::weak_ptr<ProjectManager> setProjectManager)
     : ProjectCommand{command, setProjectManager}
 {

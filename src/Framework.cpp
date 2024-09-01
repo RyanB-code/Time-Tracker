@@ -138,6 +138,7 @@ void Framework::setupCommands(){
     std::unique_ptr<DeleteProject>          deleteProject   { new DeleteProject         {"delproj",             projectManager, fileManager, settings}};
     std::unique_ptr<Print>                  print           { new Print                 {"print",               projectManager, fileManager, settings}};
     std::unique_ptr<Save>                   save            { new Save                  {"save",                projectManager, fileManager, settings}};
+    std::unique_ptr<Reload>                 reload          { new Reload                {"reload",              projectManager, fileManager, settings}};
     std::unique_ptr<Set>                    set             { new Set                   {"set",                 settings}};
     std::unique_ptr<ClearScreen>            clearScreen     { new ClearScreen           {"clr"}};
 
@@ -151,6 +152,7 @@ void Framework::setupCommands(){
     addCommand(std::move(endTimer));
     addCommand(std::move(print));
     addCommand(std::move(save));
+    addCommand(std::move(reload));
     addCommand(std::move(set));
     addCommand(std::move(clearScreen));
 }

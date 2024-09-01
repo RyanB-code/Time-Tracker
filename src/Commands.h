@@ -76,6 +76,21 @@ namespace TimeTracker{
         std::weak_ptr<FileIOManager>    fileManager;
         std::weak_ptr<Settings>         settings;
     };
+    class Reload : public ProjectCommand{
+    public:
+        Reload( std::string command, 
+                std::weak_ptr<ProjectManager>   setProjectManager,
+                std::weak_ptr<FileIOManager>    setFileManager,
+                std::weak_ptr<Settings>         setSettings
+            );
+        ~Reload();
+
+        bool execute(const std::vector<std::string>& args) override;
+    private:
+        std::weak_ptr<FileIOManager>    fileManager;
+        std::weak_ptr<Settings>         settings;
+
+    };
     class StartTimer : public ProjectCommand{
     public:
         StartTimer(std::string command, std::weak_ptr<ProjectManager> setProjectManager);
