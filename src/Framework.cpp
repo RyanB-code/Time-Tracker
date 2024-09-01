@@ -42,6 +42,7 @@ bool Framework::setup(){
     setupCommands();
     
     handleSettingsFile(settingsPath);
+    handleArguments();
 
     // Iterate through directory and populate project manager
     try{
