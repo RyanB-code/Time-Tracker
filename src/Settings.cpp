@@ -92,8 +92,6 @@ std::string TimeTracker::getAllProjectInfo(){
         os << "Release";
     #endif
 
-    os << "\nBuilt on " << __TIMESTAMP__ << "\n"; 
-
     return os.str();
 }
 
