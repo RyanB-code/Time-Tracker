@@ -11,7 +11,7 @@ set (EXE_NAME                   "time-tracker")
 add_compile_definitions(RELEASE)
 
 # Change the version information here
-project(TimeTracker VERSION 1.3.2)
+project(TimeTracker VERSION 1.4.0)
 
 configure_file(src/Config.h.in Config.h)
 
