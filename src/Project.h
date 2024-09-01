@@ -82,6 +82,8 @@ namespace TimeTracker{
 
 		bool addProject(ProjectPtr project);
 		bool deleteProject(std::string name);
+
+		void clearProjects();
 	private:
 		std::map<std::string, ProjectPtr> 	projects;
 		std::weak_ptr<Project> 				selectedProject;

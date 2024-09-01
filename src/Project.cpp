@@ -303,3 +303,6 @@ bool ProjectManager::deleteProject(std::string name){
 	projects.erase(projects.find(name));
 	return true;
 }
+void ProjectManager::clearProjects(){
+	projects.erase(projects.begin(), projects.end());
+}
