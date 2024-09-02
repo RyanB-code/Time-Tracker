@@ -71,11 +71,11 @@ namespace TimeTracker{
 		ProjectManager();
 		~ProjectManager();
 
-		ProjectPtr 									getProject()			const;
+		ProjectPtr 									getSelectedProject()	const;
 		std::vector<std::string> 					getAllProjectNames() 	const;
 		std::vector<std::shared_ptr<const Project>> getAllProjects() 		const;
 
-		ProjectPtr findProject(std::string name) const;
+		ProjectPtr findProject(std::string name) const;						// nullptr if doesnt exist
 
 		bool selectProject(std::string name);
 		void deselectProject();
