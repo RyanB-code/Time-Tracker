@@ -20,7 +20,7 @@ Framework::~Framework(){
 }
 bool Framework::run(){
 
-    while(handleArguments() == 0){
+    while(handleCommandQueue() == 0){
         // Handle commands
         getInput();
     }
@@ -41,8 +41,8 @@ bool Framework::setup(){
 
     setupCommands();
     
-    handleSettingsFile(settingsPath);
-    handleArguments();
+    readRCFile(settingsPath);
+    handleCommandQueue();
 
     // Iterate through directory and populate project manager
     try{
@@ -68,7 +68,7 @@ void Framework::getInput(){
 
     commandQueue.push(input);
 }
-int Framework::handleArguments(){
+int Framework::handleCommandQueue(){
 
     for (/*Nothing*/; !commandQueue.empty(); commandQueue.pop()){
         std::vector<std::string>    arguments       { };
@@ -179,7 +179,7 @@ bool Framework::confirmExit(){
   
 }   
 
-void Framework::handleSettingsFile(const std::string& path){
+void Framework::readRCFile(const std::string& path){
     if(std::filesystem::exists(path)){
         std::ifstream settingsFile {path}; 
         std::string line;
