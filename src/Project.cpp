@@ -241,7 +241,7 @@ ProjectManager::ProjectManager(){
 ProjectManager::~ProjectManager(){
 
 }
-ProjectPtr ProjectManager::getProject() const{
+ProjectPtr ProjectManager::getSelectedProject() const{
 	if(ProjectPtr proj = selectedProject.lock()){
 		return proj;
 	}

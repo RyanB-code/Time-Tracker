@@ -157,7 +157,7 @@ void Framework::setupCommands(){
     addCommand(std::move(clearScreen));
 }
 bool Framework::confirmExit(){
-    ProjectPtr selectedProj {projectManager->getProject()};
+    ProjectPtr selectedProj {projectManager->getSelectedProject()};
 
     if(!selectedProj)
         return true;

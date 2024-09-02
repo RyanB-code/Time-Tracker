@@ -17,7 +17,6 @@ std::string Command::getDescription() const{
 }
 
 
- // MARK: Project Commands
 ProjectCommand::ProjectCommand(std::string command, std::weak_ptr<ProjectManager> setProjectManager) 
     : Command{command}, projectManager {setProjectManager}
 {
@@ -26,7 +25,7 @@ ProjectCommand::ProjectCommand(std::string command, std::weak_ptr<ProjectManager
 ProjectCommand::~ProjectCommand(){
 
 }
-
+// MARK: Select Project
 SelectProject::SelectProject(std::string command, std::weak_ptr<ProjectManager> setProjectManager)
     : ProjectCommand{command, setProjectManager}
 {
@@ -45,6 +44,7 @@ bool SelectProject::execute(const std::vector<std::string>& args){
 
     return true;
 }
+// MARK: Deselect Project
 DeselectProject::DeselectProject(std::string command, std::weak_ptr<ProjectManager> setProjectManager)
     : ProjectCommand{command, setProjectManager}
 {
@@ -59,6 +59,7 @@ bool DeselectProject::execute(const std::vector<std::string>& args){
     tempProjectManager->deselectProject();
     return true;
 }
+// MARK: List
 List::List( std::string command, 
             std::weak_ptr<ProjectManager> setProjectManager, 
             std::weak_ptr<Settings> setSettings
@@ -92,13 +93,13 @@ bool List::execute(const std::vector<std::string>& args){
         }
     }
     else if(args[0] == "-e"){
-        if(!tempProjectManager->getProject()){
+        if(!tempProjectManager->getSelectedProject()){
             std::cout << "\tThere is no project selected.\n";
             return false;
         }
 
         // Indent for every newline
-        std::string formatted {tempProjectManager->getProject()->printAllEntries(tempSettings->getEntryNameWidth()).str()};
+        std::string formatted {tempProjectManager->getSelectedProject()->printAllEntries(tempSettings->getEntryNameWidth()).str()};
         size_t charNum { 0 };
         for(char& c : formatted){
             ++charNum;
@@ -113,6 +114,7 @@ bool List::execute(const std::vector<std::string>& args){
         return false;
     }
 }
+// MARK: Create Project
 CreateProject::CreateProject(std::string command, std::weak_ptr<ProjectManager> setProjectManager)
     : ProjectCommand{command, setProjectManager}
 {
@@ -139,6 +141,7 @@ bool CreateProject::execute(const std::vector<std::string>& args){
     tempProjectManager->selectProject(args[0]);
     return true;
 }
+// MARK: Delete Project
 DeleteProject::DeleteProject(   std::string command,
                                 std::weak_ptr<ProjectManager>   setProjectManager, 
                                 std::weak_ptr<FileIOManager>    setFileManager, 
@@ -163,12 +166,12 @@ bool DeleteProject::execute(const std::vector<std::string>& args){
 
     // Find proj name from selected project if no arg given
     if(args.empty()){
-        if(!tempProjectManager->getProject()){
+        if(!tempProjectManager->getSelectedProject()){
             std::cerr << "\tThere is no project selected.\n";
             return false;
         }
 
-        projectName = tempProjectManager->getProject()->getName(); 
+        projectName = tempProjectManager->getSelectedProject()->getName(); 
     }
     // Find project name from argument
     else{
@@ -198,6 +201,7 @@ bool DeleteProject::execute(const std::vector<std::string>& args){
 
     return true;
 }
+// MARK: Reload
 Reload::Reload( std::string command, 
                 std::weak_ptr<ProjectManager>   setProjectManager, 
                 std::weak_ptr<FileIOManager>    setFileManager,
@@ -241,6 +245,7 @@ bool Reload::execute(const std::vector<std::string>& args){
 
     return true;
 }
+// MARK: Start Timer
 StartTimer::StartTimer(std::string command, std::weak_ptr<ProjectManager> setProjectManager)
     : ProjectCommand{command, setProjectManager}
 {
@@ -252,20 +257,20 @@ bool StartTimer::execute(const std::vector<std::string>& args){
     if(!tempProjectManager)
         return false;
     
-    if(!tempProjectManager->getProject()){
+    if(!tempProjectManager->getSelectedProject()){
         std::cout << "\tThere is no project selected.\n";
         return false;
     }
 
     if(args.empty())
-        if(!tempProjectManager->getProject()->startTimer()){
+        if(!tempProjectManager->getSelectedProject()->startTimer()){
             std::cerr << "\tCould not start timer. There may be a timer already running.\n";
             return false;
         }
         else
             return true;
     else{
-        if(!tempProjectManager->getProject()->startTimer(args[0])){
+        if(!tempProjectManager->getSelectedProject()->startTimer(args[0])){
             std::cerr << "\tCould not start timer. There may be a timer already running.\n";
             return false;
         }
@@ -273,6 +278,7 @@ bool StartTimer::execute(const std::vector<std::string>& args){
             return true;
     }
 }
+// MARK: End Timer
 EndTimer::EndTimer(std::string command, std::weak_ptr<ProjectManager> manager)
     : ProjectCommand{command, manager}
 {
@@ -284,19 +290,19 @@ bool EndTimer::execute(const std::vector<std::string>& args){
     if(!tempProjectManager)
         return false;
     
-    if(!tempProjectManager->getProject()){
+    if(!tempProjectManager->getSelectedProject()){
         std::cout << "\tThere is no project selected.\n";
         return false;
     }
 
-    if(!tempProjectManager->getProject()->endTimer()){
+    if(!tempProjectManager->getSelectedProject()->endTimer()){
         std::cout << "\tThere is no running timer for the selected project.\n";
         return false;
     }
     
     return true;
 }
-
+// MARK: Save
 Save::Save( std::string                     command, 
             std::weak_ptr<ProjectManager>   setProjectManager, 
             std::weak_ptr<FileIOManager>    setFileManager, 
@@ -367,8 +373,8 @@ bool Print::execute(const std::vector<std::string>& args){
         return false;
     }
     else if(args[0] == "--total-time"){
-        if(tempProjectManager->getProject()){
-            std::cout << "\tTotal time for this project is: " << tempProjectManager->getProject()->printTotalTime().substr(0,8) <<"  [HH:MM:SS]\n";
+        if(tempProjectManager->getSelectedProject()){
+            std::cout << "\tTotal time for this project is: " << tempProjectManager->getSelectedProject()->printTotalTime().substr(0,8) <<"  [HH:MM:SS]\n";
             return true;
         }
         else{
@@ -383,8 +389,8 @@ bool Print::execute(const std::vector<std::string>& args){
         return true;
     }
     else if(args[0] == "--is-running"){
-        if(tempProjectManager->getProject()){
-            if(tempProjectManager->getProject()->isTimerRunning()){
+        if(tempProjectManager->getSelectedProject()){
+            if(tempProjectManager->getSelectedProject()->isTimerRunning()){
                 std::cout << "\tThere is a timer running.\n";
                 return true;
             }
@@ -405,9 +411,9 @@ bool Print::execute(const std::vector<std::string>& args){
         return true;
     }
     else if(args[0] == "--runtime"){
-        if(tempProjectManager->getProject()){
-            if(tempProjectManager->getProject()->getRunningTimerStartTime()){
-                Timer duration { tempProjectManager->getProject()->getRunningTimerStartTime()->getRawTime()};
+        if(tempProjectManager->getSelectedProject()){
+            if(tempProjectManager->getSelectedProject()->getRunningTimerStartTime()){
+                Timer duration { tempProjectManager->getSelectedProject()->getRunningTimerStartTime()->getRawTime()};
                 duration.end();
 
                 std::cout << "\tRuntime for timer is " << duration.printDuration().substr(0, 8) << "\n";
@@ -432,6 +438,7 @@ bool Print::execute(const std::vector<std::string>& args){
         return false;
     }
 }
+// MARK: Set
 Set::Set(std::string command,  std::weak_ptr<Settings> setSettings)
 :   Command{command}, settings{setSettings}
 {
@@ -491,10 +498,8 @@ bool Set::execute(const std::vector<std::string>& args){
         return false;
     }
 }
-
-ClearScreen::ClearScreen(std::string command)
-:   Command{command}
-{
+// MARK: Clear Screen
+ClearScreen::ClearScreen(std::string command) : Command{command} {
     this->description = "Clears the screen.\n";
 }
 bool ClearScreen::execute(const std::vector<std::string>& args){
