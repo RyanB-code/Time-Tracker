@@ -313,7 +313,8 @@ Save::Save( std::string                     command,
             fileManager     {setFileManager}, 
             settings        {setSettings}
 {
-    this->description = "Saves all projects\n";
+    this->description = "No arguments saves all projects.\n"
+                        "[project name] saves the project with given name\n";
 }
 bool Save::execute(const std::vector<std::string>& args){
     std::shared_ptr<ProjectManager> tempProjectManager  { projectManager.lock() };
@@ -323,24 +324,50 @@ bool Save::execute(const std::vector<std::string>& args){
     if(!tempProjectManager || !tempSettings || !tempFileManager)
         return false;
 
-    int savingErrors { 0 };
-    std::vector<std::shared_ptr<const Project>> projectsBuffer {tempProjectManager->getAllProjects()};
-    for(auto proj : projectsBuffer ){
-        const Project& projectBuffer { *proj.get()};
-        if(!tempFileManager->writeProject(tempSettings->getProjectDirectory(), projectBuffer))
-            ++savingErrors;
-    }
+    if(args.empty()){
+        std::vector<std::string> savingErrors;
+        std::vector<std::shared_ptr<const Project>> projectsBuffer {tempProjectManager->getAllProjects()};
+        for(auto proj : projectsBuffer ){
+            const Project& projectBuffer { *proj.get()};
+            if(!tempFileManager->writeProject(tempSettings->getProjectDirectory(), projectBuffer))
+                savingErrors.push_back(std::string{proj->getName()});   // Save name of the project that could not be saved
+        }
 
-    if(savingErrors != 0){
-        std::cerr << "\tThere was an error saving " << savingErrors << " project(s)\n";
-        return false;
+        // Print projects that couldnt be saved
+        if(!savingErrors.empty()){
+            std::cerr << "\tThere was an error saving " << savingErrors.size() << " project(s)\n";
+            for(const auto& s : savingErrors)
+                std::cerr << "\t" << s << '\n';
+            return false;
+        }
+        else{
+            std::cout << "Saved all projects.\n";
+            return true;
+        }
     }
+    // Save by project name
     else{
-        return true;
+        // Check project exists
+        ProjectPtr projectPtr { tempProjectManager->findProject(args[0]) };
+        if(!projectPtr){
+            std::cerr << "Could not find project \"" << args[0] << "\"\n";
+            return false;
+        }
+        else{
+            // Attempt to save
+            const Project& projectBuffer { *projectPtr };
+            if(!tempFileManager->writeProject(tempSettings->getProjectDirectory(), projectBuffer)){
+                std::cerr << "Could not save project \"" << args[0] << "\"\n";
+                return false;
+            }
+            else{
+                std::cout << "Saved project \"" << projectBuffer.getName() << "\"\n";
+                return true;
+            }
+        }
     }
 }
-
-
+// MARK: Print
 Print::Print(   std::string                     command, 
                 std::weak_ptr<ProjectManager>   setProjectManager, 
                 std::weak_ptr<FileIOManager>    setFileManager, 
