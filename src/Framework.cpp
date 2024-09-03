@@ -224,7 +224,8 @@ void TimeTracker::saveEveryMinute(  std::stop_token stopSaving,
                                     std::shared_ptr<ProjectManager> projectManager, 
                                     std::shared_ptr<FileIOManager>  fileManager,
                                     std::shared_ptr<Settings>       settings
-                                ){
+                                )
+{
     using namespace std::chrono_literals;
     bool continueSaving { true };
 
