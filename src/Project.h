@@ -43,6 +43,7 @@ namespace TimeTracker{
 		Timestamp 						getLastUpdated() 			const;
 		const std::vector<EntryPtr>& 	getEntries() 				const;
 		std::shared_ptr<Timestamp> 		getRunningTimerStartTime() 	const;
+		uint64_t 						getEntriesSize()			const;
 
 		bool startTimer(std::string name=ProjectHelper::UNNAMED_ENTRY);
 		bool startTimer(timepoint startTime, std::string name=ProjectHelper::UNNAMED_ENTRY);
