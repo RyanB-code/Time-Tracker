@@ -149,6 +149,16 @@ bool Project::startTimer(std::string name) {
 	
 	return true;
 }
+bool Project::startTimer(timepoint startTime, std::string name){
+	if (runningEntry)	// Do not do anything if a timer is already running
+		return false;
+
+	ProjectEntry newTimer(name);
+	newTimer.start(startTime);
+	runningEntry = std::make_shared<ProjectEntry>(std::move(newTimer));
+
+	return true;	
+}
 bool Project::endTimer() {
 
 	// If there is no timer tracked, return false
