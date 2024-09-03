@@ -20,9 +20,26 @@ Framework::~Framework(){
 }
 bool Framework::run(){
 
-    while(handleCommandQueue() == 0){
+    bool exit { false };
+    while(!exit){
+
+        // Save every minute
+        std::jthread savingThread(saveEveryMinute, projectManager, fileManager, settings);
+
         // Handle commands
-        getInput();
+        getInput(savingThread.get_stop_source());
+
+        // After input is found, join threads
+        savingThread.join();
+
+        switch (handleCommandQueue()) {
+        case 1:
+            exit = true;
+            break;
+        default:
+            // Continue
+            break;
+        }
     }
 
     return true;
@@ -59,7 +76,7 @@ bool Framework::setup(){
     return true;
 }
 // MARK: PRIVATE FUNCTIONS
-void Framework::getInput(){
+void Framework::getInput(std::stop_source savingThread){
     std::cout << "TIME TRACKER>";
 
     // Query input
@@ -67,9 +84,10 @@ void Framework::getInput(){
     std::getline(std::cin, input);
 
     commandQueue.push(input);
+
+    savingThread.request_stop();
 }
 int Framework::handleCommandQueue(){
-
     for (/*Nothing*/; !commandQueue.empty(); commandQueue.pop()){
         std::vector<std::string>    arguments       { };
         std::stringstream           inputStream     { };
@@ -200,8 +218,63 @@ void Framework::readRCFile(const std::string& path){
         newSettings.close();
     }
 }
-// MARK: TIME TRACKER HELPER
 
+// MARK: TIME TRACKER HELPER
+void TimeTracker::saveEveryMinute(  std::stop_token stopSaving,  
+                                    std::shared_ptr<ProjectManager> projectManager, 
+                                    std::shared_ptr<FileIOManager>  fileManager,
+                                    std::shared_ptr<Settings>       settings
+                                ){
+    using namespace std::chrono_literals;
+    bool continueSaving { true };
+
+    if(!projectManager || !fileManager || !settings)
+        return;
+
+    uint32_t msPassed { 0 };
+    while(continueSaving){
+        if(msPassed >= 60000){  // 60,000ms = 1min.
+            msPassed = 0;
+
+            // Ensure there is a selected project AND a timer running
+            if(projectManager->getSelectedProject() && projectManager->getSelectedProject()->isTimerRunning()){
+                Project& project {*projectManager->getSelectedProject()};
+
+                std::shared_ptr<Timestamp> timerStart {project.getRunningTimerStartTime()}; // Save running timer start time
+                project.endTimer();
+
+                fileManager->writeProject(settings->getProjectDirectory(), project);        // Write project to disk
+
+                // Find the last timer and delete it so it doesnt keep adding timers                           
+                auto& entries {project.getEntries()};
+                std::string entryName;
+                for(const auto& e : entries){
+                    if(e->getRawStartTime() == timerStart->getRawTime()){
+                        entryName = e->getName();
+                        project.removeEntry(e->getID());
+                        break;
+                    }
+                }
+
+                // Start a new timer with the old start time
+                project.startTimer(timerStart->getRawTime(), entryName);
+            }
+            
+        }
+
+        // Checks every 10ms if a stop is requested, if so it exits
+        // Have to do this, if I slept for 1 minute, response time to
+        // handle command would wait until this thread exited after the 1 min sleep
+        if(stopSaving.stop_requested())
+            continueSaving = false;
+        else{
+            std::this_thread::sleep_for(10ms);
+            msPassed += 10;
+        }
+    }
+
+    return;
+}
 std::string TimeTracker::determineSaveDirectory(){
     std::string projectsDirectory   {};
     std::string rcPath              {};
