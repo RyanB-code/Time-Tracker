@@ -8,6 +8,7 @@
 
 #include <json.h>
 #include <queue>
+#include <thread>
 
 namespace TimeTracker{
     class Framework{
@@ -34,14 +35,21 @@ namespace TimeTracker{
 
         std::string settingsPath;
 
-        void    getInput            ();             // Displays prompt and waits for user input
+        void    getInput            (std::stop_source savingThread);             // Displays prompt and waits for user input
         int     handleCommandQueue  ();             // Returns: 0 - normal, 1- exit,
         void    readRCFile          (const std::string& path);
 
         void    setupCommands       ();
         bool    confirmExit         (); // Checks if there is a running timer before exit, returns true if should exit
+
     };
     
     std::string determineSaveDirectory();
     std::string determineRCPath();
+
+    void saveEveryMinute (  std::stop_token stopSaving,  
+                            std::shared_ptr<ProjectManager> projectManager, 
+                            std::shared_ptr<FileIOManager>  fileManager,
+                            std::shared_ptr<Settings>       settings
+                        );
 }
