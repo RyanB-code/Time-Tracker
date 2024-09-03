@@ -57,7 +57,9 @@ bool Project::isTimerRunning() const{
 
 	return runningEntry->IsRunning();
 }
-
+uint64_t Project::getEntriesSize() const{
+	return entries.size();
+}
 
 bool Project::addEntry(EntryPtr entry) {
 	if(!entry->IsFinished())
