@@ -45,6 +45,7 @@ namespace TimeTracker{
 		std::shared_ptr<Timestamp> 		getRunningTimerStartTime() 	const;
 
 		bool startTimer(std::string name=ProjectHelper::UNNAMED_ENTRY);
+		bool startTimer(timepoint startTime, std::string name=ProjectHelper::UNNAMED_ENTRY);
 		bool endTimer();
 
 		bool isTimerRunning() const;
