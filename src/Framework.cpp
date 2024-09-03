@@ -77,12 +77,19 @@ bool Framework::setup(){
 }
 // MARK: PRIVATE FUNCTIONS
 void Framework::getInput(std::stop_source savingThread){
-    std::cout << "TIME TRACKER>";
+    bool inputAccepted { false };
 
+    
     // Query input
     std::string input;
-    std::getline(std::cin, input);
+    while (!inputAccepted){
+        std::cout << "TIME TRACKER>";
 
+        std::getline(std::cin, input);
+
+        if(!input.empty() && !input.starts_with('\t'))
+            inputAccepted = true;
+    }
     commandQueue.push(input);
 
     savingThread.request_stop();
