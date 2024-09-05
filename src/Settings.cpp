@@ -5,10 +5,12 @@ using namespace TimeTracker;
 
 Settings::Settings( std::string setProject, 
                     bool setVerbose, 
-                    uint8_t setEntryNameWidth
+                    uint8_t setEntryNameWidth,
+                    uint8_t setEntriesPerPage
                 )
                 :   verbose         { setVerbose },
-                    entryNameWidth  {setEntryNameWidth}
+                    entryNameWidth  { setEntryNameWidth },
+                    entriesPerPage  { setEntriesPerPage }
 
 {
     if(!setProjectDirectory(setProject)){
@@ -52,6 +54,10 @@ bool Settings::setProjectDirectory(std::string set){
 void Settings::setEntryNameWidth (uint8_t set){
     entryNameWidth = set;
 }
+void Settings::setEntriesPerPage (uint8_t set){
+    entriesPerPage = set;
+}
+
 
 bool Settings::getVerbose() const{
     return verbose;
@@ -61,6 +67,9 @@ std::string Settings::getProjectDirectory() const{
 }
 uint8_t    Settings::getEntryNameWidth() const{
     return entryNameWidth;
+}
+uint8_t Settings::getEntriesPerPage() const{
+    return entriesPerPage;
 }
 
 
