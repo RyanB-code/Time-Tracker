@@ -8,6 +8,8 @@
 
 #include <sstream>
 #include <format>
+#include <unistd.h>
+#include <termios.h>
 
 namespace TimeTracker{
     class Command{
@@ -150,4 +152,12 @@ namespace TimeTracker{
 
        bool execute(const std::vector<std::string>& args) override;
     };
+
+
+
+    namespace CommandHelper{
+        termios enableRawMode();                            // Returns the unmodified terminal attributes
+        void disableRawMode(const termios& attributes);     // Applies the parameter attributes to terminal
+        void clearRelativeTerminalSection(uint64_t moveUp, uint64_t linesToClear);
+    }
 }
