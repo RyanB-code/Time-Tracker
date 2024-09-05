@@ -98,15 +98,111 @@ bool List::execute(const std::vector<std::string>& args){
             return false;
         }
 
-        // Indent for every newline
-        std::string formatted {tempProjectManager->getSelectedProject()->printAllEntries(tempSettings->getEntryNameWidth()).str()};
-        size_t charNum { 0 };
-        for(char& c : formatted){
-            ++charNum;
-            if(c == '\n' && charNum < formatted.size())
-                formatted.insert(charNum, "\t");
+
+
+        // Paging
+        termios originalAttributes { CommandHelper::enableRawMode() }; // Saves current terminal settings before overriding
+        try {
+            bool waitForInput { true };
+            char c;
+            uint64_t    start      { 0 };
+            uint64_t    interval   { tempSettings->getEntriesPerPage() };
+            uint64_t    size       { tempProjectManager->getSelectedProject()->getEntriesSize()};
+            bool        arrowKeyFound           { false };
+            bool        leftSquareBracketFound  { false };
+            bool        updatePage              { true };
+            bool        firstTime               { true };
+            int         previousLines           { 0 };
+            while(waitForInput){
+
+                if(updatePage){
+                    // Print entries
+                    std::string table {tempProjectManager->getSelectedProject()->printRecentEntryRange(start, interval, tempSettings->getEntryNameWidth()).str()};
+                    size_t charNum  { 0 };
+                    int lines       { 1 }; // Starts at 2 since there is always one line, and information lines at bottom
+                    for(char& c : table){
+                        ++charNum;
+                        if(c == '\n')
+                            ++lines;
+                    }
+
+                    std::ostringstream moveCursorUp;
+                    if(previousLines == 0){
+                        moveCursorUp << "\033[" << lines << "A";
+                    }
+                    else{
+                        CommandHelper::clearRelativeTerminalSection(previousLines, previousLines);
+                        moveCursorUp << "\033[" << previousLines << "A";
+                    }
+
+                    // Apply cursor
+                    if(!firstTime)
+                        std::cout << moveCursorUp.str();
+                    else
+                        firstTime = false;
+
+                    previousLines = lines;
+                    std::cout << table;
+                    std::cout << "Use arrow keys to navigate pages. Press 'Q' to quit.\n";
+
+                    updatePage = false;
+                }   
+
+                read (STDIN_FILENO, &c, 1);
+
+                switch (c){
+                    case 'Q':
+                        waitForInput = false;
+                        break;
+                    case 'q':
+                        waitForInput = false;
+                        break;
+                    case '\033':
+                        arrowKeyFound = true;
+                        break;
+                    case '[':
+                        leftSquareBracketFound = true;
+                        break;
+                    case 'C':
+                        // Right Arrow
+                        if(arrowKeyFound && leftSquareBracketFound){
+                            updatePage = true;
+
+                            // Increment pages
+                            if( (start + interval) < size)
+                                start += interval;
+                            // Do not add to start if the size will be too large
+                        }
+                        
+                        arrowKeyFound = false;
+                        leftSquareBracketFound = false;
+                        break;
+                    case 'D':
+                        // Left Arrow
+                        if(arrowKeyFound && leftSquareBracketFound){
+                           updatePage = true;
+                            if( int(start - interval) < 0)
+                                start = 0;
+                            else
+                                start -= interval;
+                        }
+                        
+                        arrowKeyFound = false;
+                        leftSquareBracketFound = false;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            // Must call disable before returning
+            CommandHelper::disableRawMode(originalAttributes);
         }
-        std::cout << "\t" << formatted;
+        catch (std::exception& e){
+            std::cerr << e.what() << "\n";
+            CommandHelper::disableRawMode(originalAttributes);
+
+            return false;
+        }
         return true;
     }
     else{
@@ -513,6 +609,17 @@ bool Set::execute(const std::vector<std::string>& args){
         try{
             int width {std::stoi(args[1])};
             tempSettings->setEntryNameWidth(width);
+            return true;
+        }
+        catch(std::exception& e){
+            std::cerr << "\tInvalid argument.\n";
+            return false;
+        }
+    }
+    else if(args[0] == "entries-per-page"){
+        try{
+            int perPage {std::stoi(args[1])};
+            tempSettings->setEntriesPerPage(perPage);
             return true;
         }
         catch(std::exception& e){
