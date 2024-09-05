@@ -2,6 +2,8 @@
 
 using namespace TimeTracker;
 
+
+// MARK: Project Entry
 ProjectEntry::ProjectEntry(const std::string& s) : name{s} {
 	setID();
 }
@@ -24,9 +26,7 @@ int ProjectEntry::setID(){
 	return idEntries;
 }
 
-
-
-
+// MARK: Project
 Project::Project(const std::string& s) : name{ s } {
 	runningEntry.reset();
 }
@@ -186,7 +186,47 @@ std::shared_ptr<Timestamp> Project::getRunningTimerStartTime() const{
 }
 
 std::ostringstream Project::printAllEntries(uint8_t entryNameWidth) const {
+	if (entries.empty()) {
+		std::ostringstream os;
+		os << "There are no entries for this project.\n";
+		return os;
+	}
+
+	if(entryNameWidth < 20)
+		entryNameWidth = 20;
+
+	return ProjectHelper::printEntryTable(entries, entryNameWidth);
+}
+std::ostringstream Project::printRecentEntries(uint8_t entryNameWidth, uint64_t lastRecentEntries) const{
+	if (entries.empty()) {
+		std::ostringstream os;
+		os << "There are no entries for this project.\n";
+		return os;
+	}
+
+	if(entryNameWidth < 20)
+		entryNameWidth = 20;
+	if(lastRecentEntries < 5)
+		entryNameWidth = 5;
+
+	// Ensure recent entries is within bounds of container
+	std::reverse_iterator<std::vector<TimeTracker::EntryPtr>::const_iterator> limit;
+	if(lastRecentEntries > entries.size())
+		limit = entries.crend();
+	else
+		limit = entries.crbegin() + lastRecentEntries;
+	
+	// Choose which entries to display
+	// RELIES on entries being sorted already
+	std::vector<EntryPtr> recentEntries;
+	for (auto riter {entries.crbegin()}; riter != limit; ++riter)
+		recentEntries.push_back(*riter);
+
+	return ProjectHelper::printEntryTable(recentEntries, entryNameWidth);
+}
+std::ostringstream 	Project::printRecentEntryRange	( uint64_t start, uint64_t interval, uint8_t entryNameWidth) const{
 	std::ostringstream os;
+	size_t entriesSize{ entries.size() };
 
 	if (entries.empty()) {
 		os << "There are no entries for this project.\n";
@@ -195,35 +235,55 @@ std::ostringstream Project::printAllEntries(uint8_t entryNameWidth) const {
 
 	if(entryNameWidth < 20)
 		entryNameWidth = 20;
+	if(interval == 0)
+		throw std::invalid_argument("Interval cannot be 0");
+	if(interval > entriesSize)
+		interval = entriesSize;
+	if(start > entriesSize)
+		start = (entriesSize - interval);
 
-	constexpr uint8_t dateWidth {14}, timestampWidth{11};
 
-	os << std::format("{:<{}}", "Date",		dateWidth);	
-	os << std::format("{:<{}}", "Name", 	entryNameWidth); 
-	os << std::format("{:<{}}", "Start", 	timestampWidth);
-	os << std::format("{:<{}}", "End", 		timestampWidth);
-	os << std::format("{:<{}}", "Duration", timestampWidth);
+	uint64_t intervalRemainder { entriesSize % interval };
 
-	// 44 is the number width of the text boxes to ensure line of dashes is the same
-	os << "\n" << std::format("{:-<{}}", '-', (44+entryNameWidth)) << "\n";
+	// For paging
+	uint64_t startPlusOne 	{ start + 1 };	
+	uint64_t lastEntry 		{ startPlusOne + interval };
 
-	for (const auto& t : entries) {
-		os << std::format("{:{}}", t->printDate(), dateWidth);
-		std::string name {t->getName()};
+	if (interval == 1)
+		lastEntry = startPlusOne;
 
-		// Shorten lengthy names when displaying
-		if(name.length() > ((size_t)entryNameWidth-1)){
-			name = name.substr(0,(entryNameWidth-4)); // Minus 4 because emplacing ellipsis (3 chars) and then a space
-			name += "...";
-		}
+	uint64_t currentPage 	{ lastEntry / interval };
 
-		os << std::format("{:<{}}", name, entryNameWidth);
-		os << std::format("{:<{}}", t->printStartTime().substr(0, 8), 	timestampWidth);
-		os << std::format("{:<{}}", t->printEndTime().substr(0, 8), 	timestampWidth);
-		os << std::format("{:<{}}", t->printDuration().substr(0, 8), 	timestampWidth);
-		os << std::endl;
-	}
+	// Calculate pages
+	uint64_t totalPages;
+	if( intervalRemainder == 0 )
+		totalPages 	= entriesSize / interval;
+	else
+		totalPages	= (entriesSize / interval) + 1;
+	
+	std::reverse_iterator<std::vector<TimeTracker::EntryPtr>::const_iterator> startPlace;
+	if( (entriesSize - interval ) < start){		// If the start + interval would exceed the end, set the interval to the remainder, and set start to the remainder from the end
 		
+		if(intervalRemainder != 0)
+			interval = intervalRemainder;
+
+		start 		= entriesSize - interval;
+		startPlace 	= entries.crend() - interval;
+	}	
+	else
+		startPlace = entries.crbegin() + start;
+	
+	
+
+	// Choose which entries to display -- RELIES on entries being sorted already
+	std::vector<EntryPtr> entriesShown;
+	for (auto riter {startPlace}; riter != (startPlace + interval); ++riter)
+		entriesShown.push_back(*riter);
+
+	os << ProjectHelper::printEntryTable(entriesShown, entryNameWidth, std::pair<bool, uint64_t>{true, startPlusOne}).str();
+
+	os << "\nPage " << currentPage << " of " << totalPages << ".\n";
+
 	return os;
 }
 
@@ -245,8 +305,7 @@ std::string	Project::printTotalTime() const {
 	return std::format("{:%H:%M:%S}", totalTime);
 }
 
-
-
+// MARK: Project Manager
 ProjectManager::ProjectManager(){
 
 }
@@ -307,7 +366,6 @@ bool ProjectManager::addProject(ProjectPtr project){
 	}
 	return false;
 }
-
 bool ProjectManager::deleteProject(std::string name){
 	if(!projects.contains(name))
 		return false;
@@ -317,4 +375,57 @@ bool ProjectManager::deleteProject(std::string name){
 }
 void ProjectManager::clearProjects(){
 	projects.erase(projects.begin(), projects.end());
+}
+// MARK: Project Helper
+std::ostringstream ProjectHelper::printEntryTable(const std::vector<EntryPtr>& entries, uint8_t entryNameWidth, std::pair<bool, uint64_t> numberingInfo){
+	std::ostringstream os;
+
+	if (entries.empty()) {
+		os << "There are no entries for this project.\n";
+		return os;
+	}
+
+	// Print table
+	constexpr 	uint8_t 	dateWidth 	{14}, timestampWidth{11}, numberWidth{4};
+				uint64_t 	tableWidth 	{ dateWidth + entryNameWidth + (3 * uint64_t(timestampWidth)) - 3}; // Minus 3 since the additional width of the last timestamp is not needed
+
+	if(numberingInfo.first){
+		tableWidth += numberWidth;
+		os << std::format("{:<{}}",	"#", numberWidth);
+	}
+
+	os << std::format("{:<{}}", "Date",		dateWidth);	
+	os << std::format("{:<{}}", "Name", 	entryNameWidth); 
+	os << std::format("{:<{}}", "Start", 	timestampWidth);
+	os << std::format("{:<{}}", "End", 		timestampWidth);
+	os << std::format("{:<{}}", "Duration", timestampWidth);
+
+	os << "\n" << std::format("{:-<{}}", '-', tableWidth) << "\n";
+
+	uint64_t entryNumber { numberingInfo.second };
+	for (const auto& t : entries) {
+		if(numberingInfo.first){
+			std::ostringstream entryNumberStr;
+			entryNumberStr << entryNumber << '.';
+			os << std::format("{:<{}}",	entryNumberStr.str(), numberWidth);
+		}
+
+		os << std::format("{:{}}", t->printDate(), dateWidth);
+		std::string name {t->getName()};
+
+		// Shorten lengthy names when displaying
+		if(name.length() > ((size_t)entryNameWidth-1)){
+			name = name.substr(0,(entryNameWidth-4)); // Minus 4 because emplacing ellipsis (3 chars) and then a space
+			name += "...";
+		}
+
+		os << std::format("{:<{}}", name, entryNameWidth);
+		os << std::format("{:<{}}", t->printStartTime().substr(0, 8), 	timestampWidth);
+		os << std::format("{:<{}}", t->printEndTime().substr(0, 8), 	timestampWidth);
+		os << std::format("{:<{}}", t->printDuration().substr(0, 8), 	timestampWidth);
+		os << '\n';
+		++entryNumber;
+	}
+
+	return os;
 }
