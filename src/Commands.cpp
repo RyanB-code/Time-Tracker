@@ -474,12 +474,12 @@ Print::Print(   std::string                     command,
                 fileManager     {setFileManager}, 
                 settings        {setSettings}
 {
-    this->description = "<arg>\n--version \tPrints version information\n"
-                                "--total-time \tPrint total time of selected project\n"
-                                "--settings \tPrint settings\n"
-                                "--is-running \tShow if a timer is running\n"
-                                "--time \t\tShows current clock time\n"
-                                "--runtime \tShows duration of current timer\n";
+    this->description = "<arg>\nversion \tPrints version information\n"
+                                "total-time \tPrint total time of selected project\n"
+                                "settings \tPrint settings\n"
+                                "is-running \tShow if a timer is running\n"
+                                "time \t\tShows current clock time\n"
+                                "runtime \tShows duration of current timer\n";
 }
 bool Print::execute(const std::vector<std::string>& args){
 
@@ -495,7 +495,7 @@ bool Print::execute(const std::vector<std::string>& args){
         std::cerr << "\tThis command requires one argument.\n";
         return false;
     }
-    else if(args[0] == "--total-time"){
+    else if(args[0] == "total-time"){
         if(tempProjectManager->getSelectedProject()){
             std::cout << "\tTotal time for this project is: " << tempProjectManager->getSelectedProject()->printTotalTime().substr(0,8) <<"  [HH:MM:SS]\n";
             return true;
@@ -505,13 +505,14 @@ bool Print::execute(const std::vector<std::string>& args){
             return false;
         }   
     }
-    else if(args[0] == "--settings"){
+    else if(args[0] == "settings"){
         std::cout << "\tProject Directory: \""              << tempSettings->getProjectDirectory() << "\"\n";
         std::cout << "\tVerbose Mode: " << std::boolalpha   << tempSettings->getVerbose() << "\n";
         std::cout << "\tEntry Name Text Box Width: "        << (int)tempSettings->getEntryNameWidth() << "\n";
+        std::cout << "\tEntry Name Text Box Width: "        << (int)tempSettings->getEntriesPerPage() << "\n";
         return true;
     }
-    else if(args[0] == "--is-running"){
+    else if(args[0] == "is-running"){
         if(tempProjectManager->getSelectedProject()){
             if(tempProjectManager->getSelectedProject()->isTimerRunning()){
                 std::cout << "\tThere is a timer running.\n";
@@ -527,13 +528,13 @@ bool Print::execute(const std::vector<std::string>& args){
             return false;
         }
     }
-    else if(args[0] == "--time"){
+    else if(args[0] == "time"){
         Timestamp now;
         now.stamp();
         std::cout << "\t" << now.printTime().substr(0, 8) << " " << now.printDate() << std::endl;
         return true;
     }
-    else if(args[0] == "--runtime"){
+    else if(args[0] == "runtime"){
         if(tempProjectManager->getSelectedProject()){
             if(tempProjectManager->getSelectedProject()->getRunningTimerStartTime()){
                 Timer duration { tempProjectManager->getSelectedProject()->getRunningTimerStartTime()->getRawTime()};
@@ -552,7 +553,7 @@ bool Print::execute(const std::vector<std::string>& args){
             return false;
         }
     }
-    else if(args[0] == "--version"){
+    else if(args[0] == "version"){
         std::cout << TimeTracker::getAllProjectInfo() << "\n";
         return true;
     }
@@ -566,9 +567,10 @@ Set::Set(std::string command,  std::weak_ptr<Settings> setSettings)
 :   Command{command}, settings{setSettings}
 {
     this->description = "<setting> <value>\n"
-                        "--verbose <bool> \t\tTrue or false to set the mode of the application\n"
-                        "--project-directory <string> \tSets the project directory\n"
-                        "--entry-name-width <int> \tSets the width of the name of entries\n";
+                        "verbose <bool>             \tTrue or false to set the mode of the application\n"
+                        "project-directory <string> \tSets the project directory\n"
+                        "entry-name-width <int>     \tSets the width of the name of entries\n"
+                        "entries-per-page <int>     \tThis number of entries will be displayed each time\n";
 }
 bool Set::execute(const std::vector<std::string>& args){
     std::shared_ptr<Settings> tempSettings { settings.lock() };
@@ -581,7 +583,7 @@ bool Set::execute(const std::vector<std::string>& args){
         std::cerr << "\tThis command requires two arguments.\n";
         return false;
     }
-    else if(args[0] == "--verbose"){
+    else if(args[0] == "verbose"){
         if (args[1] == "true" || args[1] == "TRUE"){
             tempSettings->setVerbose(true);
             return true;
@@ -596,7 +598,7 @@ bool Set::execute(const std::vector<std::string>& args){
         }
 
     }
-    else if(args[0] == "--project-directory"){
+    else if(args[0] == "project-directory"){
         if(tempSettings->setProjectDirectory(args[1])){
             return true;
         }
@@ -605,7 +607,7 @@ bool Set::execute(const std::vector<std::string>& args){
             return false;
         }
     }
-    else if(args[0] == "--entry-name-width"){
+    else if(args[0] == "entry-name-width"){
         try{
             int width {std::stoi(args[1])};
             tempSettings->setEntryNameWidth(width);
