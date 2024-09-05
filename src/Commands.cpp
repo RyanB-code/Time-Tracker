@@ -540,3 +540,45 @@ bool ClearScreen::execute(const std::vector<std::string>& args){
 
     return true;
 }
+
+// MARK: Command Helper
+termios CommandHelper::enableRawMode(){
+    termios originalAttributes;
+    termios modifiedAttributes;
+
+    if (!isatty (STDIN_FILENO)) 
+        throw std::domain_error("Not a terminal, Cannot put into non-canonical mode");
+    
+    // Save the terminal attributes
+    tcgetattr (STDIN_FILENO, &originalAttributes);
+
+
+    // Set the modified terminal modes. 
+    tcgetattr (STDIN_FILENO, &modifiedAttributes);
+    modifiedAttributes.c_lflag &= ~(ICANON|ECHO);   // Clear ICANON and ECHO
+    modifiedAttributes.c_cc[VMIN] = 1;              // Sets min number of bytes that must be available for read() to return
+    modifiedAttributes.c_cc[VTIME] = 0;             // The TIME slot is only meaningful in noncanonical input mode; it specifies how long to wait for input before returning, in units of 0.1 seconds. 
+    tcsetattr (STDIN_FILENO, TCSAFLUSH, &modifiedAttributes);
+
+    return originalAttributes;
+}
+void CommandHelper::disableRawMode(const termios& attributes){
+    tcsetattr (STDIN_FILENO, TCSANOW, &attributes);
+}
+void CommandHelper::clearRelativeTerminalSection(uint64_t moveUp, uint64_t linesToClear){
+
+    std::ostringstream moveCursorUp;
+    std::ostringstream moveCursorDownOneLine { "\033[1B"} ;
+    std::ostringstream clearLine { "\033[K" };
+   
+    moveCursorUp << "\033[" << moveUp << "A";
+
+    std::cout << '\r' << moveCursorUp.str();
+
+    for(uint64_t i { 0 }; i < linesToClear; ++i){
+        std::cout << clearLine.str();
+        std::cout << moveCursorDownOneLine.str();
+    }
+
+    return;
+}
