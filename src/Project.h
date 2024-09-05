@@ -54,7 +54,9 @@ namespace TimeTracker{
 		bool addEntry(EntryPtr entry);
 		bool removeEntry(int id);
 
-		std::ostringstream	printAllEntries(uint8_t entryNameWidth=20) const;
+		std::ostringstream	printAllEntries			( uint8_t entryNameWidth=20) 								const;
+		std::ostringstream 	printRecentEntries		( uint8_t entryNameWidth=20, uint64_t lastRecentEntries=5)	const;
+		std::ostringstream 	printRecentEntryRange	( uint64_t start, uint64_t interval, uint8_t entryNameWidth=20)	const;
 		std::string			printTotalTime() const;
 
 	private:
@@ -91,4 +93,7 @@ namespace TimeTracker{
 		std::weak_ptr<Project> 				selectedProject;
 	};
 
+	namespace ProjectHelper{
+		std::ostringstream printEntryTable(const std::vector<EntryPtr>& entries, uint8_t entryNameWidth=20, std::pair<bool, uint64_t> numberingInfo={false, 0}); // Numbering info - bool is whether or not you want it included, the int is IF TRUE, what number to start at
+	}
 }
