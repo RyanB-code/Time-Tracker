@@ -506,10 +506,10 @@ bool Print::execute(const std::vector<std::string>& args){
         }   
     }
     else if(args[0] == "settings"){
-        std::cout << "\tProject Directory: \""              << tempSettings->getProjectDirectory() << "\"\n";
-        std::cout << "\tVerbose Mode: " << std::boolalpha   << tempSettings->getVerbose() << "\n";
-        std::cout << "\tEntry Name Text Box Width: "        << (int)tempSettings->getEntryNameWidth() << "\n";
-        std::cout << "\tEntry Name Text Box Width: "        << (int)tempSettings->getEntriesPerPage() << "\n";
+        std::cout << "\tProject Directory:          \"" << tempSettings->getProjectDirectory() << "\"\n";
+        std::cout << "\tVerbose Mode:               "   << std::boolalpha   << tempSettings->getVerbose() << "\n";
+        std::cout << "\tEntry Name Text Box Width:  "   << (int)tempSettings->getEntryNameWidth() << "\n";
+        std::cout << "\tEntries Shown Per Page:     "   << (int)tempSettings->getEntriesPerPage() << "\n";
         return true;
     }
     else if(args[0] == "is-running"){
