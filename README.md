@@ -10,8 +10,9 @@ Secondly, this is a test bed to allow me to practice my software design skills a
 
 ### Usage
 Currently as of **version 1.6.1** only Linux is supported. 
-- The default location to save project files to is `~/Documents/` and will create a directory `Time-Tracker`.
-- The default RC file path is the home directory and will create a file `.timetracker-rc`
+- The default location to save project files to is `~/Documents/` and will create directory `Time-Tracker`.
+- The default RC file path is the home directory and will create the file `.timetracker-rc`
 
-Once you are running the program and internal setup was successful, the following prompt will appear ```TIME TRACKER> ```
+Once you are running the program and internal setup was successful, the following prompt will appear 
+```TIME TRACKER> ```
 The command `help` will display further information about all commands and their usage.
