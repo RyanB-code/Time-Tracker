@@ -1,5 +1,5 @@
 # Time Tracker
-## About
+### About
 This is a time tracker much like work. Create a project, start and label a timer, end the timer and save to disk, then view time spent on the project. That's all this does.
 
 This project came about since I found myself too focused during programming sessions to the point where I would neglect proper time management and skip meals or not have enough time to do things I already mentally planned on doing. I use this daily to track overall time spent on various tasks whenever I am at my computer.
