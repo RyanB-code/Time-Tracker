@@ -1,0 +1,75 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "Debug // Build with g++",
+            "command": "/usr/bin/g++",
+            "args": [
+                "-fdiagnostics-color=always",
+                "-Wall",
+                "-std=c++23",
+
+                "-D DEBUG",     // To use debugging tools
+
+                "-I${workspaceFolder}/include",
+                "-L${workspaceFolder}/lib",
+                "-g",
+                "${workspaceFolder}/src/*.cpp", 
+                "-o",
+                "${workspaceFolder}/bin/time-tracker"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "compiler: /usr/bin/g++, with DEBUG macro"
+        },
+        {
+            "type": "cppbuild",
+            "label": "Release // 1. Build with CMake",
+            "command": "make",
+            "args": [
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "Invoke CMake build process"
+        },
+        {
+            "type": "shell",
+            "label": "Release // 2. Copy to /usr/local/bin directory",
+            "command": "sudo",
+            "args": [
+                "cp",
+                "time-tracker",
+                "/usr/local/bin/time-tracker"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/bin"
+            },
+            "detail": "Copy release version"
+        },
+        {
+			"label": "Perform All Release Tasks",
+			"dependsOrder": "sequence",
+			"dependsOn" : [	"Release // 1. Build with CMake",
+                            "Release // 2. Copy to /usr/local/bin directory"
+						],
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			}
+		}
+    ]
+}
