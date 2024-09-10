@@ -37,24 +37,21 @@ std::string Timestamp::printTime() const {
 }
 
 std::string Timestamp::printDay() const {
-	return std::format("{:%d}", time);
+	std::chrono::zoned_time zonedTime { std::chrono::current_zone(), time };
+	return std::format("{:%d}", zonedTime);
 }
 std::string Timestamp::printMonth() const {
-	return std::format("{:%B}", time);
+	std::chrono::zoned_time zonedTime { std::chrono::current_zone(), time };
+	return std::format("{:%B}", zonedTime);
 }
 std::string Timestamp::printDate() const {
-	return std::format("{:%Od %b %Y}", time);
+	std::chrono::zoned_time zonedTime { std::chrono::current_zone(), time };
+	return std::format("{:%Od %b %Y}", zonedTime);
 }
-
 timepoint Timestamp::getRawTime() const {
-	std::chrono::zoned_time zonedTime { std::chrono::current_zone(), time }; // Makes zoned time
+	std::chrono::zoned_time zonedTime { std::chrono::current_zone(), time };
 	return zonedTime;
 }
-ymd	Timestamp::getRawYMD() const {
-	std::chrono::year_month_day ymd{ std::chrono::floor<std::chrono::days>((std::chrono::time_point<std::chrono::system_clock>)time) };
-	return ymd;
-}
-
 
 
 Timer::Timer(){
