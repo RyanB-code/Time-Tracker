@@ -28,7 +28,6 @@ public:
 	std::string printDate()		const;		// Prints in DD MMM YYYY format (12 Dec 2022)
 
 	timepoint	getRawTime()	const;
-	ymd			getRawYMD()		const;
 
 private:
 	timepoint time{};
