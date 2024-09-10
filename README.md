@@ -8,9 +8,38 @@ First and foremost this is a hobby project meant to assist me; far from a polish
 
 Secondly, this is a test bed to allow me to practice my software design skills and test new facets of C++ and programming in general on a larger project than a hello-world program. If you have any tips or questions, please inform me. I am always open to learn. 
 
+### Install
+Prerequisites:
+- Requires CMake
+- Currently as of **version 1.6.3 only Linux is supported**
+
+Steps:
+1. Clone the project
+2. Navigate into the `Time-Tracker` directory
+
+```cd Time-Tracker```
+
+3. Create build directory
+
+```mkdir build```
+
+4. Navigate into the `build` directory
+
+```cd build```
+
+5. Run CMake to build necessary build files
+
+```cmake ..```
+
+6. Create the executable binary
+
+```make```
+
+Once this is done, the executable binary will be located in the `Time-Tracker/bin` directory.
+
 ### Usage
-Currently as of **version 1.6.1** only Linux is supported. 
-- The default location to save project files to is `~/Documents/`. The program will create directory `Time-Tracker` to use.
+Currently as of **version 1.6.3 only Linux is supported**. 
+- The default location to save project files to is `~/Documents/` which is where the program will create the directory `Time-Tracker`.
 - The default RC file path is the home directory. The program will create the file `.timetracker-rc` which is akin to a `.bashrc` file. Commands entered here will be executed upon each startup. 
 
 Once you are running the program and internal setup was successful, the following prompt will appear 
