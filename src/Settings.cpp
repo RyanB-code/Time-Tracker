@@ -4,11 +4,13 @@ using json = nlohmann::json;
 using namespace TimeTracker;
 
 Settings::Settings( std::string setProject, 
-                    bool setVerbose, 
+                    bool setVerbose,
+                    bool setAutoSave, 
                     uint8_t setEntryNameWidth,
                     uint8_t setEntriesPerPage
                 )
                 :   verbose         { setVerbose },
+                    autoSave        { setAutoSave },
                     entryNameWidth  { setEntryNameWidth },
                     entriesPerPage  { setEntriesPerPage }
 
@@ -23,6 +25,9 @@ Settings::~Settings(){
 }
 void Settings::setVerbose(bool set){
     verbose = set;
+}
+void Settings::setAutoSave(bool set){
+    autoSave = set;
 }
 bool Settings::setProjectDirectory(std::string set){
 
@@ -61,6 +66,9 @@ void Settings::setEntriesPerPage (uint8_t set){
 
 bool Settings::getVerbose() const{
     return verbose;
+}
+bool Settings::getIsAutoSaveOn() const {
+    return autoSave;
 }
 std::string Settings::getProjectDirectory() const{
     return projectDirectory;
