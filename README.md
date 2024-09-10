@@ -16,26 +16,24 @@ Prerequisites:
 Steps:
 1. Clone the project
 2. Navigate into the `Time-Tracker` directory
-
-```cd Time-Tracker```
-
 3. Create build directory
-
-```mkdir build```
-
 4. Navigate into the `build` directory
-
-```cd build```
-
 5. Run CMake to build necessary build files
-
-```cmake ..```
-
 6. Create the executable binary
 
-```make```
-
 Once this is done, the executable binary will be located in the `Time-Tracker/bin` directory.
+
+All together, the commands will be
+
+```
+$ git clone <URL>
+$ cd Time-Tracker
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+```
+
 
 ### Usage
 Currently as of **version 1.6.3 only Linux is supported**. 
