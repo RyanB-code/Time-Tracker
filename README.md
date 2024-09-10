@@ -42,6 +42,8 @@ Currently as of **version 1.6.3 only Linux is supported**.
 
 Once you are running the program and internal setup was successful, the following prompt will appear 
 
-```TIME TRACKER> ```
+```
+TIME TRACKER>
+```
 
 The command `help` will display further information about all commands and their usage.
