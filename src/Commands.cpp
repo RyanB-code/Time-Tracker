@@ -506,10 +506,14 @@ bool Print::execute(const std::vector<std::string>& args){
         }   
     }
     else if(args[0] == "settings"){
-        std::cout << "\tProject Directory:          \"" << tempSettings->getProjectDirectory() << "\"\n";
-        std::cout << "\tVerbose Mode:               "   << std::boolalpha   << tempSettings->getVerbose() << "\n";
-        std::cout << "\tEntry Name Text Box Width:  "   << (int)tempSettings->getEntryNameWidth() << "\n";
-        std::cout << "\tEntries Shown Per Page:     "   << (int)tempSettings->getEntriesPerPage() << "\n";
+        std::cout << "Project Directory:          \"" << tempSettings->getProjectDirectory() << "\"\n";
+        std::cout << "Verbose Mode:               "   << std::boolalpha   << tempSettings->getVerbose() << "\n";
+        std::cout << "Auto Save:                  ";
+        
+        tempSettings->getIsAutoSaveOn() ?  std::cout << "on\n" : std::cout << "off\n";
+
+        std::cout << "Entry Name Text Box Width:  "   << (int)tempSettings->getEntryNameWidth() << "\n";
+        std::cout << "Entries Shown Per Page:     "   << (int)tempSettings->getEntriesPerPage() << "\n";
         return true;
     }
     else if(args[0] == "is-running"){
@@ -567,7 +571,8 @@ Set::Set(std::string command,  std::weak_ptr<Settings> setSettings)
 :   Command{command}, settings{setSettings}
 {
     this->description = "<setting> <value>\n"
-                        "verbose <bool>             \tTrue or false to set the mode of the application\n"
+                        "verbose <bool>             \tTrue or false to set the verbosity of outputs\n"
+                        "auto-save <bool>           \tTrue or false to turn on auto saving. Auto saving occurs when on the home screen and there is a timer running\n"
                         "project-directory <string> \tSets the project directory\n"
                         "entry-name-width <int>     \tSets the width of the name of entries\n"
                         "entries-per-page <int>     \tThis number of entries will be displayed each time\n";
@@ -596,7 +601,20 @@ bool Set::execute(const std::vector<std::string>& args){
             std::cout << "\tInvalid argument.\n";
             return false;
         }
-
+    }
+    else if(args[0] == "auto-save"){
+        if (args[1] == "true" || args[1] == "TRUE"){
+            tempSettings->setAutoSave(true);
+            return true;
+        }
+        else if (args[1] == "false" || args[1] == "FALSE"){
+            tempSettings->setAutoSave(false);
+            return true;
+        }
+        else{
+            std::cout << "\tInvalid argument.\n";
+            return false;
+        }
     }
     else if(args[0] == "project-directory"){
         if(tempSettings->setProjectDirectory(args[1])){
@@ -629,6 +647,7 @@ bool Set::execute(const std::vector<std::string>& args){
             return false;
         }
     }
+
     else{
         std::cerr << "\tInvalid argument \"" << args[0] << "\"\n";
         return false;

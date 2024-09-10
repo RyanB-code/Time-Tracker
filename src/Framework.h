@@ -11,6 +11,7 @@
 #include <thread>
 
 namespace TimeTracker{
+
     class Framework{
     public:
         Framework(  std::shared_ptr<ProjectManager> setProjectManager, 
@@ -35,7 +36,9 @@ namespace TimeTracker{
 
         std::string settingsPath;
 
-        void    getInput            (std::stop_source savingThread);             // Displays prompt and waits for user input
+        void    getInput            (std::stop_source savingThread);    // Requests stop after input is accepted
+        void    getInput            ();                                 // Does not request stop after input is accepted
+
         int     handleCommandQueue  ();             // Returns: 0 - normal, 1- exit,
         void    readRCFile          (const std::string& path);
 

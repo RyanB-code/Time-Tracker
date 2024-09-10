@@ -18,19 +18,21 @@ Framework::Framework(   std::shared_ptr<ProjectManager> setProjectManager,
 Framework::~Framework(){
     
 }
+// MARK: Run
 bool Framework::run(){
 
     bool exit { false };
     while(!exit){
 
         // Save every minute
-        std::jthread savingThread(saveEveryMinute, projectManager, fileManager, settings);
+        if(settings->getIsAutoSaveOn()){
+            std::jthread savingThread(saveEveryMinute, projectManager, fileManager, settings);
+            getInput(savingThread.get_stop_source());   // Handle commands
 
-        // Handle commands
-        getInput(savingThread.get_stop_source());
-
-        // After input is found, join threads
-        savingThread.join();
+            savingThread.join();                        // After input is found, join threads
+        }
+        else
+            getInput();
 
         switch (handleCommandQueue()) {
         case 1:
@@ -44,16 +46,7 @@ bool Framework::run(){
 
     return true;
 }
-bool Framework::addCommand(std::unique_ptr<Command> command){
-    if(commands.contains(command->getCommand())){
-        return false;
-    }
-    else{
-        commands.try_emplace(command->getCommand(), std::move(command));
-        return true;
-    }
-    return false;
-}
+// MARK: Setup
 bool Framework::setup(){
 
     setupCommands();
@@ -75,10 +68,19 @@ bool Framework::setup(){
 
     return true;
 }
+bool Framework::addCommand(std::unique_ptr<Command> command){
+    if(commands.contains(command->getCommand())){
+        return false;
+    }
+    else{
+        commands.try_emplace(command->getCommand(), std::move(command));
+        return true;
+    }
+    return false;
+}
 // MARK: PRIVATE FUNCTIONS
 void Framework::getInput(std::stop_source savingThread){
     bool inputAccepted { false };
-
     
     // Query input
     std::string input;
@@ -93,6 +95,21 @@ void Framework::getInput(std::stop_source savingThread){
     commandQueue.push(input);
 
     savingThread.request_stop();
+}
+void Framework::getInput(){
+    bool inputAccepted { false };
+    
+    // Query input
+    std::string input;
+    while (!inputAccepted){
+        std::cout << "TIME TRACKER>";
+
+        std::getline(std::cin, input);
+
+        if(!input.empty() && !input.starts_with('\t'))
+            inputAccepted = true;
+    }
+    commandQueue.push(input);
 }
 int Framework::handleCommandQueue(){
     for (/*Nothing*/; !commandQueue.empty(); commandQueue.pop()){
