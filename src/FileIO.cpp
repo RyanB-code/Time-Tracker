@@ -18,9 +18,6 @@ JsonFormat::~JsonFormat(){
 
 }
 bool JsonFormat::write(const std::string& path, const Project& project) const{
-	if(!std::filesystem::exists(path))
-		return false;
-
 	// Write basic information
     json j{
 		{"name", 	project.getName()},
@@ -28,7 +25,6 @@ bool JsonFormat::write(const std::string& path, const Project& project) const{
 	};
 
 	// Print all entries in the project
-	int i{ 0 };
 	nlohmann::json entries = nlohmann::json::array();
 	for (const auto& t : project.getEntries()) {
 		std::ostringstream startBuf, endBuf;
@@ -44,8 +40,6 @@ bool JsonFormat::write(const std::string& path, const Project& project) const{
 		}
 		else
 			entries.push_back({ t->getName(), startBuf.str(), endBuf.str() });
-
-		++i;
 	}
 
 	j["entries"] = entries;
