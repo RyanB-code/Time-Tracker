@@ -13,7 +13,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 # Change the version information here
-project(TimeTracker VERSION 1.6.5)
+project(TimeTracker VERSION 1.7.0)
 
 add_subdirectory(src)
 

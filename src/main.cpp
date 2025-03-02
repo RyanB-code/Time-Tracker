@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
 		std::vector<std::string> args(argv, argv + argc);
 		// Display version information
 		if(args.at(1) == "--version"){
-			std::cout << getAllProjectInfo();
+			std::cout << getAllProjectInfo() << '\n';
 			return 0;
 		}
 		else{
