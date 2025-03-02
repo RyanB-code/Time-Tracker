@@ -14,37 +14,20 @@ Prerequisites:
 - Currently as of **version 1.6.3 only Linux is supported**
 
 Steps:
-1. Clone the project
+1. Clone the project, navigate to it, and make the build directory
 ```
 git clone <URL>
-```
-2. Navigate into the `Time-Tracker` directory
-```
 cd Time-Tracker
-```
-3. Create build directory
-```
 mkdir build
 ```
-4. Navigate into the `build` directory
+2. Run CMake to build the project
 ```
-cd build
+cmake --build build/
 ```
-5. Run CMake to build necessary build files
-```
-cmake ..
-```
-6. Create the executable binary
-```
-make
-```
-Once this is done, the executable binary will be located in the `Time-Tracker/bin` directory.
-
-
 ### Usage
-Currently as of **version 1.6.3 only Linux is supported**. 
+Currently **only Linux is supported**. 
 - The default location to save project files to is `~/Documents/` which is where the program will create the directory `Time-Tracker`.
-- The default RC file path is the home directory. The program will create the file `.timetracker-rc` which is akin to a `.bashrc` file. Commands entered here will be executed upon each startup. 
+- The default RC file path is `~/.config`. The program will create the file `.timetracker-rc` which is akin to a `.bashrc` file. Commands entered here will be executed upon each startup. 
 
 Once you are running the program and internal setup was successful, the following prompt will appear 
 
@@ -53,3 +36,10 @@ TIME TRACKER>
 ```
 
 The command `help` will display further information about all commands and their usage.
+
+### Development and Debug Settings
+To access the debug settings, create the debug option for CMake as follows
+```
+cmake -DDEBUG=ON build/
+```
+For the debug version, you should change the loctation of the save directory. To do so, in the `src/Framework.cpp` source file, change the value of the `projectsDirectory` string in both of the following functions: `deteremineSaveDirectory()` and `determineRCPath()`. This will change where the rc file and save directory are expected to be.
