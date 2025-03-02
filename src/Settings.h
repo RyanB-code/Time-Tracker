@@ -6,10 +6,7 @@
 #include <filesystem>
 #include <fstream>
 
-#ifdef RELEASE
 #include <Config.h>
-#endif
-
 #include "json.h"
 
 namespace TimeTracker {

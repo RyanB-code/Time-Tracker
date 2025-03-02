@@ -9,3 +9,7 @@ add_executable(${PROJECT_NAME}  Commands.cpp
     )
 
 target_include_directories(${PROJECT_NAME} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR} )
+
+if(DEBUG)
+	target_compile_definitions  (${PROJECT_NAME} PRIVATE DEBUG)                                                                 # Basically #define DEBUG for the source code
+endif()
