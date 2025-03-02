@@ -8,15 +8,19 @@ set(C_STANDARD_REQUIRED         True)
 set (EXECUTABLE_OUTPUT_PATH     "${CMAKE_SOURCE_DIR}/bin/")
 set (EXE_NAME                   "time-tracker")
 
-add_compile_definitions(RELEASE)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+	option(DEBUG "DEBUG" ON)
+endif()
 
 # Change the version information here
 project(TimeTracker VERSION 1.6.5)
 
-configure_file(src/Config.h.in Config.h)
-
 add_subdirectory(src)
-add_subdirectory(include)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${EXE_NAME})
+
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/include/Config.h.in" "${CMAKE_CURRENT_SOURCE_DIR}/include/Config.h")
+
+
+target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_BINARY_DIR})

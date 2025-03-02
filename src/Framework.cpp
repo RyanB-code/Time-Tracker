@@ -309,20 +309,12 @@ std::string TimeTracker::determineSaveDirectory(){
         #if defined DEBUG
             projectsDirectory   = "/mnt/NAS/1-Project-Related/Project-Source-Directories/Time-Tracker/Test-Directory/";
             rcPath              = projectsDirectory + ".timetracker-rc";
-        #elif defined RELEASE
+        #else
             std::string home {getenv("HOME")};
             rcPath = home + "/.timetracker-rc";
             projectsDirectory = home + "/Documents/Time-Tracker/";
-        #else
-            projectsDirectory = "";
-            rcPath = "";
         #endif
-	#elif defined _Win32
-        projectsDirectory = "";
-        rcPath = "";
-	#else
-        projectsDirectory = "";
-        rcPath = "";
+
     #endif
     return projectsDirectory;
 }
@@ -336,20 +328,12 @@ std::string TimeTracker::determineRCPath(){
         #if defined DEBUG
             projectsDirectory   = "/mnt/NAS/1-Project-Related/Project-Source-Directories/Time-Tracker/Test-Directory/";
             rcPath              = projectsDirectory + ".timetracker-rc";
-        #elif defined RELEASE
+        #else
             std::string home {getenv("HOME")};
             rcPath = home + "/.timetracker-rc";
             projectsDirectory = home + "/Documents/Time-Tracker/";
-        #else
-            projectsDirectory = "";
-            rcPath = "";
         #endif
-	#elif defined _Win32
-        projectsDirectory = "";
-        rcPath = "";
-	#else
-        projectsDirectory = "";
-        rcPath = "";
+
     #endif
 
     return rcPath;

@@ -84,15 +84,9 @@ uint8_t Settings::getEntriesPerPage() const{
 std::string TimeTracker::getVersion(){
     std::ostringstream os;
 
-    #if defined RELEASE
     os <<   TimeTracker_VERSION_MAJOR << "." <<
             TimeTracker_VERSION_MINOR << "." <<
             TimeTracker_VERSION_PATCH;
-    #elif defined DEBUG
-        os << "DEBUG";
-    #else
-        os << "NULL";
-    #endif
 
     return os.str();
 }
@@ -103,9 +97,7 @@ std::string TimeTracker::getAllProjectInfo(){
 
     #ifdef DEBUG
         os << "Debug";
-    #endif
-
-    #ifdef RELEASE
+    #else
         os << "Release";
     #endif
 
