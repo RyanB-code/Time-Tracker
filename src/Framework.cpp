@@ -302,16 +302,13 @@ void TimeTracker::saveEveryMinute(  std::stop_token stopSaving,
 }
 std::string TimeTracker::determineSaveDirectory(){
     std::string projectsDirectory   {};
-    std::string rcPath              {};
 
     #if defined __linux__
 
         #if defined DEBUG
             projectsDirectory   = "/mnt/NAS/1-Project-Related/Project-Source-Directories/Time-Tracker/Test-Directory/";
-            rcPath              = projectsDirectory + ".timetracker-rc";
         #else
             std::string home {getenv("HOME")};
-            rcPath = home + "/.timetracker-rc";
             projectsDirectory = home + "/Documents/Time-Tracker/";
         #endif
 
@@ -330,8 +327,7 @@ std::string TimeTracker::determineRCPath(){
             rcPath              = projectsDirectory + ".timetracker-rc";
         #else
             std::string home {getenv("HOME")};
-            rcPath = home + "/.timetracker-rc";
-            projectsDirectory = home + "/Documents/Time-Tracker/";
+            rcPath = home + "/.config/.timetracker-rc";
         #endif
 
     #endif
