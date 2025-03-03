@@ -184,6 +184,7 @@ void Framework::setupCommands(){
     std::unique_ptr<Set>                    set             { new Set                   {"set",                 settings}};
     std::unique_ptr<ClearScreen>            clearScreen     { new ClearScreen           {"clr"}};
 
+	std::unique_ptr<Timeline>		timeline	{ new Timeline		{"timeline",		projectManager, settings}};
 
     addCommand(std::move(deselectProject));
     addCommand(std::move(selectProject));
@@ -197,6 +198,7 @@ void Framework::setupCommands(){
     addCommand(std::move(reload));
     addCommand(std::move(set));
     addCommand(std::move(clearScreen));
+    addCommand(std::move(timeline));
 }
 bool Framework::confirmExit(){
     ProjectPtr selectedProj {projectManager->getSelectedProject()};

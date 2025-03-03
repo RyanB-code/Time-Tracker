@@ -668,6 +668,59 @@ bool ClearScreen::execute(const std::vector<std::string>& args){
 
     return true;
 }
+Timeline::Timeline(std::string command, std::weak_ptr<ProjectManager> setProjectManager, std::weak_ptr<Settings> setSettings) : ProjectCommand { command, setProjectManager }, settings { setSettings} {
+	this->description = "Displays a timeline of tracked timers of a specified timeframe\n";	
+}
+bool Timeline::execute(const std::vector<std::string>& args){
+	std::shared_ptr<Settings> tempSettings { settings.lock() };
+	std::shared_ptr<ProjectManager> tempManager { projectManager.lock() };
+
+	if(!tempSettings || !tempManager)
+		return false;
+
+	std::vector<std::shared_ptr<const Project>> projects { tempManager->getAllProjects() };
+	std::map<std::chrono::system_clock::time_point, EntryPtr> sortedEntries;
+
+	const std::chrono::time_point backstop{ std::chrono::system_clock::now() - std::chrono::days(7) };
+
+	// Go through all projects and get all entries before the backstop
+	for(const auto& projPtr : projects){
+		const Project& proj { *projPtr};
+		
+		 std::vector<EntryPtr> entries {};
+		 proj.getEntries(entries);
+
+		for(const auto& entryPtr : entries){
+			if(entryPtr->getRawStartTime().get_sys_time() > backstop)
+				sortedEntries.try_emplace(std::chrono::time_point{entryPtr->getRawStartTime().get_sys_time()}, entryPtr);
+		}
+	}
+	
+	for(const auto [timepoint, entry] : sortedEntries){
+		std::cout << "Time: " << timepoint << "\n";
+	}
+
+	std::cout << "Mon |\n";
+	
+	// printing of bottom line
+	for(int i { 0 }; i < 100; ++i){
+		std::cout << '_';
+	}
+	std::cout << "\n    ";
+
+	// printing of the times
+	for(int i { 0 }; i < 96; ++i){
+		if(i % 4 == 0)
+			std::cout << '|';
+		else
+			std::cout << ' ';
+	}
+	std::cout << "\n  12am  1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20  21  22  23\n";
+
+	std::cout << '\n';
+	return true;
+}
+
 
 // MARK: Command Helper
 termios CommandHelper::enableRawMode(){

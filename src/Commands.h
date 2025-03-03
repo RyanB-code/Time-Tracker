@@ -2,14 +2,14 @@
 #include "FileIO.h"
 #include "Settings.h"
 
-#ifndef DEBUG
 #include <Config.h>
-#endif
 
 #include <sstream>
 #include <format>
 #include <unistd.h>
 #include <termios.h>
+#include <map>
+#include <chrono>
 
 namespace TimeTracker{
     class Command{
@@ -153,7 +153,18 @@ namespace TimeTracker{
        bool execute(const std::vector<std::string>& args) override;
     };
 
-
+	class Timeline : public ProjectCommand {
+	public:	
+		Timeline(std::string command, 
+			std::weak_ptr<ProjectManager>   setProjectManager,
+			std::weak_ptr<Settings>         setSettings
+		);
+		
+		bool execute(const std::vector<std::string>& args) override;
+	private:
+		std::weak_ptr<Settings> settings;
+	};
+	
 
     namespace CommandHelper{
         termios enableRawMode();                            // Returns the unmodified terminal attributes
