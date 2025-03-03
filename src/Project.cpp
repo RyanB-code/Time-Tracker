@@ -136,8 +136,9 @@ bool Project::removeEntry(int id){
 	}
 	return false;
 }
-const std::vector<EntryPtr>& Project::getEntries() const{
-	return entries;
+void Project::getEntries(std::vector<EntryPtr>& entryList) const{
+	for( const auto& entry : entries )
+		entryList.emplace_back(entry);
 }
 
 

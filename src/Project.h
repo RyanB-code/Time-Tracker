@@ -41,7 +41,7 @@ namespace TimeTracker{
 
 		std::string_view 				getName() 					const;
 		Timestamp 						getLastUpdated() 			const;
-		const std::vector<EntryPtr>& 	getEntries() 				const;
+		void					getEntries(std::vector<EntryPtr>& entryList)		const;
 		std::shared_ptr<Timestamp> 		getRunningTimerStartTime() 	const;
 		uint64_t 						getEntriesSize()			const;
 
