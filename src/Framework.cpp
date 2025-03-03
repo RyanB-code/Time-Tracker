@@ -270,8 +270,9 @@ void TimeTracker::saveEveryMinute(  std::stop_token stopSaving,
 
                 fileManager->writeProject(settings->getProjectDirectory(), project);        // Write project to disk
 
-                // Find the last timer and delete it so it doesnt keep adding timers                           
-                auto& entries {project.getEntries()};
+                // Find the last timer and delete it so it doesnt keep adding timers
+		std::vector<EntryPtr> entries;
+		project.getEntries(entries);
                 std::string entryName;
                 for(const auto& e : entries){
                     if(e->getRawStartTime() == timerStart->getRawTime()){

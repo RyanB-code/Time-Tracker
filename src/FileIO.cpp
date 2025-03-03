@@ -26,7 +26,11 @@ bool JsonFormat::write(const std::string& path, const Project& project) const{
 
 	// Print all entries in the project
 	nlohmann::json entries = nlohmann::json::array();
-	for (const auto& t : project.getEntries()) {
+
+	std::vector<EntryPtr> projEntries;
+	project.getEntries(projEntries);
+
+	for (const auto& t : projEntries) {
 		std::ostringstream startBuf, endBuf;
 		startBuf 	<< t->getRawStartTime();
 		endBuf 		<< t->getRawEndTime();
