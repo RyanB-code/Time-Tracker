@@ -678,12 +678,30 @@ bool Timeline::execute(const std::vector<std::string>& args){
 	if(!tempSettings || !tempManager)
 		return false;
 
-	std::vector<std::shared_ptr<const Project>> projects { tempManager->getAllProjects() };
-	std::map<std::chrono::system_clock::time_point, EntryPtr> sortedEntries;
+	char option { 'w' };
+	std::chrono::time_point<std::chrono::system_clock> backstop;
+	std::chrono::time_point<std::chrono::system_clock> frontstop { std::chrono::system_clock::now() };
+	
+	// Put correct mode and set the proper backstop
+	if(!args.empty())
+		option = args[0][0];
 
-	const std::chrono::time_point backstop{ std::chrono::system_clock::now() - std::chrono::days(7) };
+	switch(option){
+		case 'w':
+			backstop = CommandHelper::getBeginningOfWeek(frontstop);
+			break;
+		case '7':
+			backstop = CommandHelper::getSevenDaysAgo(frontstop);
+			break;
+		default:
+			backstop = CommandHelper::getBeginningOfWeek(frontstop);
+			break;
+	}
 
 	// Go through all projects and get all entries before the backstop
+	std::vector<std::shared_ptr<const Project>> projects { tempManager->getAllProjects() };
+	std::map<std::chrono::system_clock::time_point, EntryPtr> sortedEntries;
+	
 	for(const auto& projPtr : projects){
 		const Project& proj { *projPtr};
 		
@@ -696,19 +714,58 @@ bool Timeline::execute(const std::vector<std::string>& args){
 		}
 	}
 	
-	for(const auto [timepoint, entry] : sortedEntries){
-		std::cout << "Time: " << timepoint << "\n";
+	// Early exit if no entries in the timeframe
+	if(sortedEntries.empty()){
+		std::cout << std::format ("There were no Entries between {:%F}", backstop ) << " and " << std::format("{:%F}", frontstop) << "\n";
+		return true;
 	}
 
-	std::cout << "Mon |\n";
+
+	// Output the entries into the table
 	
-	// printing of bottom line
+	// Get bounds to loop for day numbers
+	auto tableDayLimit { std::chrono::floor<std::chrono::days>(frontstop) - std::chrono::floor<std::chrono::days>(backstop)};
+	
+	std::cout << tableDayLimit << "\n";
+	std::cout << "Back: " << backstop << "\n";
+	std::cout << "Front: " << frontstop << "\n";
+
+	int entryID { 1 };
+	std::map<std::chrono::system_clock::time_point, EntryPtr>::iterator itr { sortedEntries.begin() };
+	for(int i { 0 }; i <= tableDayLimit.count(); ++i){
+		std::chrono::zoned_time zonedDay {std::chrono::current_zone(), backstop + std::chrono::days(i)}; 
+
+		int entryArrayIndex { 0 };
+		std::array<std::pair<int, EntryPtr>, 10> entriesForDay { };
+
+		while(itr != sortedEntries.end()) {
+			if(entryArrayIndex >=10) // Do not add more than 10 entries per day
+				break;
+
+			if(std::chrono::floor<std::chrono::days>(zonedDay.get_local_time()) == std::chrono::floor<std::chrono::days>(std::chrono::zoned_time{std::chrono::current_zone(), itr->first}.get_local_time())){
+				entriesForDay[entryArrayIndex] = std::pair{entryID, itr->second};
+				++entryArrayIndex;
+				++entryID;
+				++itr;
+			}
+			else	
+				break;
+			
+		}
+		
+		
+		if(entryArrayIndex >= 0 && entryArrayIndex < 10)
+			CommandHelper::renderTimelineRow(zonedDay, entriesForDay);
+	}
+
+		
+	// Printing of bottom line
 	for(int i { 0 }; i < 100; ++i){
 		std::cout << '_';
 	}
 	std::cout << "\n    ";
 
-	// printing of the times
+	// Printing of the times
 	for(int i { 0 }; i < 96; ++i){
 		if(i % 4 == 0)
 			std::cout << '|';
@@ -718,6 +775,7 @@ bool Timeline::execute(const std::vector<std::string>& args){
 	std::cout << "\n  12am  1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20  21  22  23\n";
 
 	std::cout << '\n';
+		
 	return true;
 }
 
@@ -763,3 +821,28 @@ void CommandHelper::clearRelativeTerminalSection(uint64_t moveUp, uint64_t lines
 
     return;
 }
+std::chrono::time_point<std::chrono::system_clock> CommandHelper::getBeginningOfWeek(std::chrono::time_point<std::chrono::system_clock> time){
+	std::chrono::weekday currentDay { std::chrono::floor<std::chrono::days>(time) } ;
+
+	return time - std::chrono::days(static_cast<int>(currentDay.c_encoding()));
+}
+std::chrono::time_point<std::chrono::system_clock> CommandHelper::getSevenDaysAgo(std::chrono::time_point<std::chrono::system_clock> time){
+	return time - std::chrono::days(7);
+}
+void CommandHelper::renderTimelineRow (timepoint day, std::array<std::pair<int, EntryPtr>, 10> entries){
+	auto zonedDayFloor { std::chrono::floor<std::chrono::days>(std::chrono::zoned_time {std::chrono::current_zone(), day}.get_local_time()) };
+
+	//std::cout << "Zoned day floor: " << zonedDayFloor << "\n";
+	std::cout << std::format("{:%a}", zonedDayFloor) << " |";
+
+	for(const auto& [ID, entry] : entries){
+		if(entry != nullptr){
+			std::chrono::hh_mm_ss clockTime { entry->getRawStartTime().get_local_time() - zonedDayFloor}; 
+			std::cout << clockTime;
+		}
+	}
+	std::cout << "\n";
+
+	return;
+}
+
