@@ -170,5 +170,9 @@ namespace TimeTracker{
         termios enableRawMode();                            // Returns the unmodified terminal attributes
         void disableRawMode(const termios& attributes);     // Applies the parameter attributes to terminal
         void clearRelativeTerminalSection(uint64_t moveUp, uint64_t linesToClear);
+	std::chrono::time_point<std::chrono::system_clock> getBeginningOfWeek(std::chrono::time_point<std::chrono::system_clock> time);
+	std::chrono::time_point<std::chrono::system_clock> getSevenDaysAgo(std::chrono::time_point<std::chrono::system_clock> time);
+	
+	void renderTimelineRow (timepoint day, std::array<std::pair<int, EntryPtr>, 10> entries);
     }
 }
