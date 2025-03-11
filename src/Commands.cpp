@@ -726,9 +726,9 @@ bool Timeline::execute(const std::vector<std::string>& args){
 	// Get bounds to loop for day numbers
 	auto tableDayLimit { std::chrono::floor<std::chrono::days>(frontstop) - std::chrono::floor<std::chrono::days>(backstop)};
 	
-	std::cout << tableDayLimit << "\n";
-	std::cout << "Back: " << backstop << "\n";
-	std::cout << "Front: " << frontstop << "\n";
+	//std::cout << tableDayLimit << "\n";
+	//std::cout << "Back: " << backstop << "\n";
+	//std::cout << "Front: " << frontstop << "\n";
 
 	int entryID { 1 };
 	std::map<std::chrono::system_clock::time_point, EntryPtr>::iterator itr { sortedEntries.begin() };
@@ -760,10 +760,10 @@ bool Timeline::execute(const std::vector<std::string>& args){
 
 		
 	// Printing of bottom line
-	for(int i { 0 }; i < 100; ++i){
+	for(int i { 0 }; i < 101; ++i){
 		std::cout << '_';
 	}
-	std::cout << "\n    ";
+	std::cout << "\n     ";
 
 	// Printing of the times
 	for(int i { 0 }; i < 96; ++i){
@@ -772,7 +772,7 @@ bool Timeline::execute(const std::vector<std::string>& args){
 		else
 			std::cout << ' ';
 	}
-	std::cout << "\n  12am  1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20  21  22  23\n";
+	std::cout << "\n   12am  1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20  21  22  23\n";
 
 	std::cout << '\n';
 		
@@ -832,15 +832,41 @@ std::chrono::time_point<std::chrono::system_clock> CommandHelper::getSevenDaysAg
 void CommandHelper::renderTimelineRow (timepoint day, std::array<std::pair<int, EntryPtr>, 10> entries){
 	auto zonedDayFloor { std::chrono::floor<std::chrono::days>(std::chrono::zoned_time {std::chrono::current_zone(), day}.get_local_time()) };
 
-	//std::cout << "Zoned day floor: " << zonedDayFloor << "\n";
 	std::cout << std::format("{:%a}", zonedDayFloor) << " |";
+
+	std::ostringstream line;
+
+	std::array<int, 10> startPoints;
+	int addPointIndex { 0 };
+	int writePointIndex { 0 };
 
 	for(const auto& [ID, entry] : entries){
 		if(entry != nullptr){
-			std::chrono::hh_mm_ss clockTime { entry->getRawStartTime().get_local_time() - zonedDayFloor}; 
-			std::cout << clockTime;
+			int minutes { std::chrono::duration_cast<std::chrono::minutes>(entry->getRawStartTime().get_local_time() - zonedDayFloor).count() };
+			
+			int multipleOf15 { minutes / 15 };
+			startPoints[addPointIndex] = multipleOf15;
+			++addPointIndex;
 		}
+
 	}
+	
+	/*
+	for(int i : startPoints)
+		if(i > 0 && i < 96)
+			std::cout << " I: " << i;
+	*/
+
+	for(int charNum { 0 }; charNum < 96; ++charNum){
+		if(charNum == startPoints[writePointIndex]){
+			++writePointIndex;
+			line << 'x';
+		}
+		else
+			line << ' ';
+	}
+		
+	std::cout << line.str();
 	std::cout << "\n";
 
 	return;
