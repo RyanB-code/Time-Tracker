@@ -732,7 +732,7 @@ bool Timeline::execute(const std::vector<std::string>& args){
 
 	int entryID { 1 };
 	std::map<std::chrono::system_clock::time_point, EntryPtr>::iterator itr { sortedEntries.begin() };
-	for(int i { 0 }; i <= tableDayLimit.count(); ++i){
+	for(int i { 1 }; i <= tableDayLimit.count(); ++i){
 		std::chrono::zoned_time zonedDay {std::chrono::current_zone(), backstop + std::chrono::days(i)}; 
 
 		int entryArrayIndex { 0 };
