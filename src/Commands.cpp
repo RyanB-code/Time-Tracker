@@ -681,7 +681,7 @@ bool Timeline::execute(const std::vector<std::string>& args){
 	char option { 'w' };
 	std::chrono::time_point<std::chrono::system_clock> backstop;
 	std::chrono::time_point<std::chrono::system_clock> frontstop { std::chrono::system_clock::now() };
-	
+
 	// Put correct mode and set the proper backstop
 	if(!args.empty())
 		option = args[0][0];
@@ -691,17 +691,20 @@ bool Timeline::execute(const std::vector<std::string>& args){
 			backstop = CommandHelper::getBeginningOfWeek(frontstop);
 			break;
 		case '7':
-			backstop = CommandHelper::getSevenDaysAgo(frontstop);
+			backstop = CommandHelper::getNumDaysAgo(7, frontstop);
 			break;
 		default:
-			backstop = CommandHelper::getBeginningOfWeek(frontstop);
+			if(isdigit(option))
+				backstop = CommandHelper::getNumDaysAgo((int)option - 48, frontstop);
+			else
+				backstop = CommandHelper::getBeginningOfWeek(frontstop);
 			break;
 	}
 
 	// Go through all projects and get all entries before the backstop
 	std::vector<std::shared_ptr<const Project>> projects { tempManager->getAllProjects() };
 	std::map<std::chrono::system_clock::time_point, EntryPtr> sortedEntries;
-	
+
 	for(const auto& projPtr : projects){
 		const Project& proj { *projPtr};
 		
@@ -722,14 +725,8 @@ bool Timeline::execute(const std::vector<std::string>& args){
 
 
 	// Output the entries into the table
-	
-	// Get bounds to loop for day numbers
+	// Get upper limit for looping
 	auto tableDayLimit { std::chrono::floor<std::chrono::days>(frontstop) - std::chrono::floor<std::chrono::days>(backstop)};
-	
-	//std::cout << tableDayLimit << "\n";
-	//std::cout << "Back: " << backstop << "\n";
-	//std::cout << "Front: " << frontstop << "\n";
-
 	int entryID { 1 };
 	std::map<std::chrono::system_clock::time_point, EntryPtr>::iterator itr { sortedEntries.begin() };
 	for(int i { 1 }; i <= tableDayLimit.count(); ++i){
@@ -739,10 +736,17 @@ bool Timeline::execute(const std::vector<std::string>& args){
 		std::array<std::pair<int, EntryPtr>, 10> entriesForDay { };
 
 		while(itr != sortedEntries.end()) {
-			if(entryArrayIndex >=10) // Do not add more than 10 entries per day
+			if(entryArrayIndex >= 10) // Do not add more than 10 entries per day
 				break;
 
-			if(std::chrono::floor<std::chrono::days>(zonedDay.get_local_time()) == std::chrono::floor<std::chrono::days>(std::chrono::zoned_time{std::chrono::current_zone(), itr->first}.get_local_time())){
+			const auto zonedDayIndexFloor { std::chrono::floor<std::chrono::days>(zonedDay.get_local_time()) };
+			const auto zonedDayItrFloor { std::chrono::floor<std::chrono::days>(itr->second->getRawStartTime().get_local_time()) };
+
+			// If days are the same for the index and the row, add to entriesForDay array
+			// If index floor is less than the itr, increment itr and repeat
+			if(zonedDayIndexFloor > zonedDayItrFloor)
+				++itr;
+			else if(zonedDayIndexFloor == zonedDayItrFloor){
 				entriesForDay[entryArrayIndex] = std::pair{entryID, itr->second};
 				++entryArrayIndex;
 				++entryID;
@@ -750,9 +754,7 @@ bool Timeline::execute(const std::vector<std::string>& args){
 			}
 			else	
 				break;
-			
 		}
-		
 		
 		if(entryArrayIndex >= 0 && entryArrayIndex < 10)
 			CommandHelper::renderTimelineRow(zonedDay, entriesForDay);
@@ -826,47 +828,45 @@ std::chrono::time_point<std::chrono::system_clock> CommandHelper::getBeginningOf
 
 	return time - std::chrono::days(static_cast<int>(currentDay.c_encoding()));
 }
-std::chrono::time_point<std::chrono::system_clock> CommandHelper::getSevenDaysAgo(std::chrono::time_point<std::chrono::system_clock> time){
-	return time - std::chrono::days(7);
+std::chrono::time_point<std::chrono::system_clock> CommandHelper::getNumDaysAgo(int days, std::chrono::time_point<std::chrono::system_clock> time){
+	return time - std::chrono::days(days);
 }
-void CommandHelper::renderTimelineRow (timepoint day, std::array<std::pair<int, EntryPtr>, 10> entries){
+void CommandHelper::renderTimelineRow (timepoint day, const std::array<std::pair<int, EntryPtr>, 10>& entries){
+	struct EntryRender{
+		int ID		{ 0 };
+		int start	{ 0 };
+		int end 	{ 0 };
+	};
+
 	auto zonedDayFloor { std::chrono::floor<std::chrono::days>(std::chrono::zoned_time {std::chrono::current_zone(), day}.get_local_time()) };
 
 	std::cout << std::format("{:%a}", zonedDayFloor) << " |";
 
-	std::ostringstream line;
+	std::array<EntryRender, 10>pointsBuffer;
+	int pointsIndex { 0 };
 
-	std::array<int, 10> startPoints;
-	int addPointIndex { 0 };
-	int writePointIndex { 0 };
+	// Determine start and end points for each timer
+	for(int entryIndex { 0 }; entryIndex < entries.max_size(); ++entryIndex){
+		const auto& [ID, entry] {entries.at(entryIndex)};
 
-	for(const auto& [ID, entry] : entries){
-		if(entry != nullptr){
-			int minutes { std::chrono::duration_cast<std::chrono::minutes>(entry->getRawStartTime().get_local_time() - zonedDayFloor).count() };
-			
-			int multipleOf15 { minutes / 15 };
-			startPoints[addPointIndex] = multipleOf15;
-			++addPointIndex;
+		if(entry){
+			int startMulOf15 { (std::chrono::duration_cast<std::chrono::minutes>(entry->getRawStartTime().get_local_time() - zonedDayFloor).count()) / 15 };
+			int endMulOf15 	{ (std::chrono::duration_cast<std::chrono::minutes>(entry->getRawEndTime().get_local_time() - zonedDayFloor).count()) / 15 };
+
+			pointsBuffer[pointsIndex] = EntryRender{ID, startMulOf15, endMulOf15};
+			++pointsIndex;
 		}
-
 	}
 	
-	/*
-	for(int i : startPoints)
-		if(i > 0 && i < 96)
-			std::cout << " I: " << i;
-	*/
 
-	for(int charNum { 0 }; charNum < 96; ++charNum){
-		if(charNum == startPoints[writePointIndex]){
-			++writePointIndex;
-			line << 'x';
-		}
-		else
-			line << ' ';
-	}
+	// Sort overlapping points 
+	pointsIndex = 0;
+
+	for(const auto& entryRender : pointsBuffer)
+		if(entryRender.start > 0 && entryRender.end > 0)
+			std::cout << "\tID: " << entryRender.ID << " | Start: " << entryRender.start << " | End: " << entryRender.end << "\n";
+
 		
-	std::cout << line.str();
 	std::cout << "\n";
 
 	return;
