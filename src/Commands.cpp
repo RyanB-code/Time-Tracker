@@ -833,16 +833,21 @@ std::chrono::time_point<std::chrono::system_clock> CommandHelper::getNumDaysAgo(
 }
 void CommandHelper::renderTimelineRow (timepoint day, const std::array<std::pair<int, EntryPtr>, 10>& entries){
 	struct EntryRender{
-		int ID		{ 0 };
+		std::pair<int, EntryPtr> pair {};
 		int start	{ 0 };
 		int end 	{ 0 };
 	};
 
+	struct FinalRenderInfo{
+		std::string ID	{ "NULL" };
+		std::array<std::pair<int, EntryPtr>, 10> entries;
+		int start	{ 0 };
+		int end		{ 0 };
+	};
+
 	auto zonedDayFloor { std::chrono::floor<std::chrono::days>(std::chrono::zoned_time {std::chrono::current_zone(), day}.get_local_time()) };
 
-	std::cout << std::format("{:%a}", zonedDayFloor) << " |";
-
-	std::array<EntryRender, 10>pointsBuffer;
+	std::array<EntryRender, 10>entryPoints;
 	int pointsIndex { 0 };
 
 	// Determine start and end points for each timer
@@ -853,7 +858,7 @@ void CommandHelper::renderTimelineRow (timepoint day, const std::array<std::pair
 			int startMulOf15 { (std::chrono::duration_cast<std::chrono::minutes>(entry->getRawStartTime().get_local_time() - zonedDayFloor).count()) / 15 };
 			int endMulOf15 	{ (std::chrono::duration_cast<std::chrono::minutes>(entry->getRawEndTime().get_local_time() - zonedDayFloor).count()) / 15 };
 
-			pointsBuffer[pointsIndex] = EntryRender{ID, startMulOf15, endMulOf15};
+			entryPoints[pointsIndex] = EntryRender{std::pair(ID, entry), startMulOf15, endMulOf15};
 			++pointsIndex;
 		}
 	}
@@ -862,9 +867,80 @@ void CommandHelper::renderTimelineRow (timepoint day, const std::array<std::pair
 	// Sort overlapping points 
 	pointsIndex = 0;
 
-	for(const auto& entryRender : pointsBuffer)
+	std::array<FinalRenderInfo, 10> finalRenderArray { };
+	int finalRenderIndex { 0 };
+
+	// Will cause off by 1 if try to dereference with i
+ 	for( int i { 0 }; i < entryPoints.max_size(); ++i){
+		const EntryRender& renderStartEntry { entryPoints.at(pointsIndex) };
+
+		if(renderStartEntry.start == 0 && renderStartEntry.end == 0)
+			continue;
+
+		std::cout << "Render Start: " << renderStartEntry.start << "\n";
+
+		FinalRenderInfo finalRenderBuffer { };
+		int finalRenderBufferIndex { 0 };
+
+		// Copy raw entry into final render array as the start point
+		finalRenderBuffer.entries.at(finalRenderBufferIndex) = renderStartEntry.pair;
+		finalRenderBuffer.start = renderStartEntry.start;
+		
+
+		// See if next point's start overlaps with current's end		
+		int renderBufferEnd { renderStartEntry.end };
+		while(pointsIndex < entryPoints.max_size()-1 && finalRenderBufferIndex < finalRenderBuffer.entries.max_size()-1){
+
+			const EntryRender& compareEntry { entryPoints.at(pointsIndex + 1)};
+
+			if(compareEntry.start == 0 && compareEntry.end == 0){
+				++pointsIndex;
+				continue;
+			}
+
+			// If they overlap, add to the finalRenderBuffer's array.
+			// Continue until end < start of next entry
+			if(renderBufferEnd >= compareEntry.start){
+				finalRenderBuffer.entries.at(++finalRenderBufferIndex) = compareEntry.pair;
+				++finalRenderBufferIndex;
+				renderBufferEnd = compareEntry.end;
+			}
+			else
+				break;
+			
+
+			++pointsIndex;
+		}
+		finalRenderBuffer.end = renderBufferEnd;
+		
+		// Add to render array
+		finalRenderArray.at(finalRenderIndex) = finalRenderBuffer;
+		++finalRenderIndex;
+	}
+
+	// Testing
+	for(const auto& final : finalRenderArray){
+
+		if(final.start == 0 && final.end == 0)
+			continue;
+
+		std::cout << "Final Render:\n";
+		std::cout << "Start: " << final.start << "\n";
+		std::cout << "End: " << final.end << "\n";
+		std::cout << "Entries: \n";
+
+		for(const auto& [ID, entry] : final.entries){
+			if(entry)
+				std::cout << "ID: " << ID << "| Entry: " << entry->getRawStartTime().get_local_time() << "\n";
+		}
+	}
+
+
+	std::cout << std::format("{:%a}", zonedDayFloor) << " |";
+
+	for(const auto& entryRender : entryPoints)
 		if(entryRender.start > 0 && entryRender.end > 0)
-			std::cout << "\tID: " << entryRender.ID << " | Start: " << entryRender.start << " | End: " << entryRender.end << "\n";
+			std::cout << "\tID: " << entryRender.pair.first << " | Start: " << entryRender.start << " | End: " << entryRender.end << "\n";
 
 		
 	std::cout << "\n";
