@@ -864,13 +864,11 @@ void CommandHelper::renderTimelineRow (timepoint day, const std::array<std::pair
 	}
 	
 
-	pointsIndex = 0; // Reset buffer
 
 	std::array<FinalRenderInfo, 10> finalRenderArray { };
 	int finalRenderIndex { 0 };
 
-	// Will cause off by 1 if try to dereference with i
- 	for( int i { 0 }; i < entryPoints.max_size(); ++i){
+ 	for( pointsIndex = 0 ; pointsIndex < entryPoints.max_size(); ++pointsIndex){
 		const EntryRender& renderStartEntry { entryPoints.at(pointsIndex) };
 
 		if(renderStartEntry.start == 0 && renderStartEntry.end == 0)
@@ -884,16 +882,14 @@ void CommandHelper::renderTimelineRow (timepoint day, const std::array<std::pair
 		finalRenderBuffer.start = renderStartEntry.start;
 		
 
-		// See if next point's start overlaps with current's end		
+		// See if next point's start overlaps with current's end, add if they do
 		int renderBufferEnd { renderStartEntry.end };
-		while(pointsIndex < entryPoints.max_size()-1 && finalRenderBufferIndex < finalRenderBuffer.entries.max_size()-1){
+		for( ; pointsIndex < entryPoints.max_size()-1 && finalRenderBufferIndex < finalRenderBuffer.entries.max_size()-1; ++pointsIndex){
 			const EntryRender& compareEntry { entryPoints.at(pointsIndex + 1)};
 
 			// Don't bother if the entry is nothing
-			if(compareEntry.start == 0 && compareEntry.end == 0){
-				++pointsIndex;
+			if(compareEntry.start == 0 && compareEntry.end == 0)
 				continue;
-			}
 
 			// If they overlap, add to the finalRenderBuffer's array.
 			// Continue until end < start of next entry
@@ -905,7 +901,6 @@ void CommandHelper::renderTimelineRow (timepoint day, const std::array<std::pair
 			else
 				break;
 
-			++pointsIndex;
 		}
 
 		finalRenderBuffer.end = renderBufferEnd;
@@ -922,13 +917,13 @@ void CommandHelper::renderTimelineRow (timepoint day, const std::array<std::pair
 			continue;
 
 		std::cout << "Final Render:\n";
-		std::cout << "Start: " << final.start << "\n";
-		std::cout << "End: " << final.end << "\n";
-		std::cout << "Entries: \n";
+		std::cout << "\tStart: " << final.start << "\n";
+		std::cout << "\tEnd: " << final.end << "\n";
+		std::cout << "\tEntries: \n";
 
 		for(const auto& [ID, entry] : final.entries){
 			if(entry)
-				std::cout << "ID: " << ID << "| Entry: " << entry->getRawStartTime().get_local_time() << "\n";
+				std::cout << "\tID: " << ID << "| Entry: " << entry->getRawStartTime().get_local_time() << "\n";
 		}
 	}
 
