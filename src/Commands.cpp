@@ -757,7 +757,7 @@ bool Timeline::execute(const std::vector<std::string>& args){
 		}
 		
 		if(entryArrayIndex >= 0 && entryArrayIndex < 10)
-			CommandHelper::renderTimelineRow(zonedDay, entriesForDay);
+			CommandHelper::makeEntryPoints(zonedDay, entriesForDay);
 	}
 
 		
@@ -831,18 +831,11 @@ std::chrono::time_point<std::chrono::system_clock> CommandHelper::getBeginningOf
 std::chrono::time_point<std::chrono::system_clock> CommandHelper::getNumDaysAgo(int days, std::chrono::time_point<std::chrono::system_clock> time){
 	return time - std::chrono::days(days);
 }
-void CommandHelper::renderTimelineRow (timepoint day, const std::array<std::pair<int, EntryPtr>, 10>& entries){
+std::array<Timeline::FinalEntryPointsInfo, 10> CommandHelper::makeEntryPoints (timepoint day, const std::array<std::pair<int, EntryPtr>, 10>& entries){
 	struct EntryRender{
-		std::pair<int, EntryPtr> pair {};
+		Timeline::EntryPair entryPair {};
 		int start	{ 0 };
 		int end 	{ 0 };
-	};
-
-	struct FinalRenderInfo{
-		std::string ID	{ "NULL" };
-		std::array<std::pair<int, EntryPtr>, 10> entries;
-		int start	{ 0 };
-		int end		{ 0 };
 	};
 
 	auto zonedDayFloor { std::chrono::floor<std::chrono::days>(std::chrono::zoned_time {std::chrono::current_zone(), day}.get_local_time()) };
@@ -858,14 +851,14 @@ void CommandHelper::renderTimelineRow (timepoint day, const std::array<std::pair
 			int startMulOf15 { (std::chrono::duration_cast<std::chrono::minutes>(entry->getRawStartTime().get_local_time() - zonedDayFloor).count()) / 15 };
 			int endMulOf15 	{ (std::chrono::duration_cast<std::chrono::minutes>(entry->getRawEndTime().get_local_time() - zonedDayFloor).count()) / 15 };
 
-			entryPoints[pointsIndex] = EntryRender{std::pair(ID, entry), startMulOf15, endMulOf15};
+			entryPoints[pointsIndex] = EntryRender{Timeline::EntryPair{ID, entry}, startMulOf15, endMulOf15};
 			++pointsIndex;
 		}
 	}
 	
 
 
-	std::array<FinalRenderInfo, 10> finalRenderArray { };
+	std::array<Timeline::FinalEntryPointsInfo, 10> finalRenderArray { };
 	int finalRenderIndex { 0 };
 
  	for( pointsIndex = 0 ; pointsIndex < entryPoints.max_size(); ++pointsIndex){
@@ -874,11 +867,11 @@ void CommandHelper::renderTimelineRow (timepoint day, const std::array<std::pair
 		if(renderStartEntry.start == 0 && renderStartEntry.end == 0)
 			continue;
 
-		FinalRenderInfo finalRenderBuffer { };
+		Timeline::FinalEntryPointsInfo finalRenderBuffer { };
 		int finalRenderBufferIndex { 0 };
 
 		// Copy raw entry into final render array as the start point
-		finalRenderBuffer.entries.at(finalRenderBufferIndex) = renderStartEntry.pair;
+		finalRenderBuffer.entries.at(finalRenderBufferIndex) = renderStartEntry.entryPair;
 		finalRenderBuffer.start = renderStartEntry.start;
 		
 
@@ -894,7 +887,7 @@ void CommandHelper::renderTimelineRow (timepoint day, const std::array<std::pair
 			// If they overlap, add to the finalRenderBuffer's array.
 			// Continue until end < start of next entry
 			if(renderBufferEnd >= compareEntry.start){
-				finalRenderBuffer.entries.at(++finalRenderBufferIndex) = compareEntry.pair;
+				finalRenderBuffer.entries.at(++finalRenderBufferIndex) = compareEntry.entryPair;
 				++finalRenderBufferIndex;
 				renderBufferEnd = compareEntry.end;
 			}
@@ -932,11 +925,11 @@ void CommandHelper::renderTimelineRow (timepoint day, const std::array<std::pair
 
 	for(const auto& entryRender : entryPoints)
 		if(entryRender.start > 0 && entryRender.end > 0)
-			std::cout << "\tID: " << entryRender.pair.first << " | Start: " << entryRender.start << " | End: " << entryRender.end << "\n";
+			std::cout << "\tID: " << entryRender.entryPair.ID << " | Start: " << entryRender.start << " | End: " << entryRender.end << "\n";
 
 		
 	std::cout << "\n";
 
-	return;
+	return finalRenderArray;
 }
 

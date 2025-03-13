@@ -161,6 +161,17 @@ namespace TimeTracker{
 		);
 		
 		bool execute(const std::vector<std::string>& args) override;
+		
+		struct EntryPair {
+			int ID { 0 };
+			EntryPtr entry;
+		};
+		struct FinalEntryPointsInfo {
+			std::string ID { "NULL" };
+			std::array<EntryPair, 10> entries;
+			int start { 0 };
+			int end { 0 };
+		};
 	private:
 		std::weak_ptr<Settings> settings;
 	};
@@ -175,6 +186,6 @@ namespace TimeTracker{
 	std::chrono::time_point<std::chrono::system_clock> getBeginningOfWeek(std::chrono::time_point<std::chrono::system_clock> time);
 	std::chrono::time_point<std::chrono::system_clock> getNumDaysAgo(int days, std::chrono::time_point<std::chrono::system_clock> time);
 	
-	void renderTimelineRow (timepoint day, const std::array<std::pair<int, EntryPtr>, 10>& entries);
+	std::array<Timeline::FinalEntryPointsInfo, 10> makeEntryPoints (timepoint day, const std::array<std::pair<int, EntryPtr>, 10>& entries);
     }
 }
