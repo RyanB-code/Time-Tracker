@@ -864,8 +864,7 @@ void CommandHelper::renderTimelineRow (timepoint day, const std::array<std::pair
 	}
 	
 
-	// Sort overlapping points 
-	pointsIndex = 0;
+	pointsIndex = 0; // Reset buffer
 
 	std::array<FinalRenderInfo, 10> finalRenderArray { };
 	int finalRenderIndex { 0 };
@@ -876,8 +875,6 @@ void CommandHelper::renderTimelineRow (timepoint day, const std::array<std::pair
 
 		if(renderStartEntry.start == 0 && renderStartEntry.end == 0)
 			continue;
-
-		std::cout << "Render Start: " << renderStartEntry.start << "\n";
 
 		FinalRenderInfo finalRenderBuffer { };
 		int finalRenderBufferIndex { 0 };
@@ -890,9 +887,9 @@ void CommandHelper::renderTimelineRow (timepoint day, const std::array<std::pair
 		// See if next point's start overlaps with current's end		
 		int renderBufferEnd { renderStartEntry.end };
 		while(pointsIndex < entryPoints.max_size()-1 && finalRenderBufferIndex < finalRenderBuffer.entries.max_size()-1){
-
 			const EntryRender& compareEntry { entryPoints.at(pointsIndex + 1)};
 
+			// Don't bother if the entry is nothing
 			if(compareEntry.start == 0 && compareEntry.end == 0){
 				++pointsIndex;
 				continue;
@@ -907,10 +904,10 @@ void CommandHelper::renderTimelineRow (timepoint day, const std::array<std::pair
 			}
 			else
 				break;
-			
 
 			++pointsIndex;
 		}
+
 		finalRenderBuffer.end = renderBufferEnd;
 		
 		// Add to render array
