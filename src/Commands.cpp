@@ -672,6 +672,13 @@ Timeline::Timeline(std::string command, std::weak_ptr<ProjectManager> setProject
 	this->description = "Displays a timeline of tracked timers of a specified timeframe\n";	
 }
 bool Timeline::execute(const std::vector<std::string>& args){
+	using EntryID 		= Timeline::EntryID;
+	using EntryPoints 	= Timeline::EntryPoints;
+	using TimelineDay	= Timeline::TimelineDay;
+
+	using namespace CommandHelper;
+
+
 	std::shared_ptr<Settings> tempSettings { settings.lock() };
 	std::shared_ptr<ProjectManager> tempManager { projectManager.lock() };
 
@@ -681,6 +688,8 @@ bool Timeline::execute(const std::vector<std::string>& args){
 	char option { 'w' };
 	std::chrono::time_point<std::chrono::system_clock> backstop;
 	std::chrono::time_point<std::chrono::system_clock> frontstop { std::chrono::system_clock::now() };
+	std::array<TimelineDay, MAX_TIMELINE_DAYS> timelineDays;
+	int timelineDaysIndex { 0 };
 
 	// Put correct mode and set the proper backstop
 	if(!args.empty())
@@ -688,16 +697,16 @@ bool Timeline::execute(const std::vector<std::string>& args){
 
 	switch(option){
 		case 'w':
-			backstop = CommandHelper::getBeginningOfWeek(frontstop);
+			backstop = getBeginningOfWeek(frontstop);
 			break;
 		case '7':
-			backstop = CommandHelper::getNumDaysAgo(7, frontstop);
+			backstop = getNumDaysAgo(7, frontstop);
 			break;
 		default:
 			if(isdigit(option))
-				backstop = CommandHelper::getNumDaysAgo((int)option - 48, frontstop);
+				backstop = getNumDaysAgo((int)option - 48, frontstop);
 			else
-				backstop = CommandHelper::getBeginningOfWeek(frontstop);
+				backstop = getBeginningOfWeek(frontstop);
 			break;
 	}
 
@@ -723,17 +732,17 @@ bool Timeline::execute(const std::vector<std::string>& args){
 		return true;
 	}
 
-
-	// Output the entries into the table
-	// Get upper limit for looping
-	auto tableDayLimit { std::chrono::floor<std::chrono::days>(frontstop) - std::chrono::floor<std::chrono::days>(backstop)};
+	// Loop variables
+	int daysToDisplay { (std::chrono::floor<std::chrono::days>(frontstop) - std::chrono::floor<std::chrono::days>(backstop)).count() }; // Set loop limit
 	int entryID { 1 };
 	std::map<std::chrono::system_clock::time_point, EntryPtr>::iterator itr { sortedEntries.begin() };
-	for(int i { 1 }; i <= tableDayLimit.count(); ++i){
+	
+	// Breakdown entries by day
+	for(int i { 1 }; i <= daysToDisplay; ++i){
 		std::chrono::zoned_time zonedDay {std::chrono::current_zone(), backstop + std::chrono::days(i)}; 
 
 		int entryArrayIndex { 0 };
-		std::array<std::pair<int, EntryPtr>, 10> entriesForDay { };
+		std::array<EntryID, 10> entriesForDay { };
 
 		while(itr != sortedEntries.end()) {
 			if(entryArrayIndex >= 10) // Do not add more than 10 entries per day
@@ -747,7 +756,7 @@ bool Timeline::execute(const std::vector<std::string>& args){
 			if(zonedDayIndexFloor > zonedDayItrFloor)
 				++itr;
 			else if(zonedDayIndexFloor == zonedDayItrFloor){
-				entriesForDay[entryArrayIndex] = std::pair{entryID, itr->second};
+				entriesForDay[entryArrayIndex] = EntryID{entryID, itr->second};
 				++entryArrayIndex;
 				++entryID;
 				++itr;
@@ -755,29 +764,19 @@ bool Timeline::execute(const std::vector<std::string>& args){
 			else	
 				break;
 		}
-		
-		if(entryArrayIndex >= 0 && entryArrayIndex < 10)
-			CommandHelper::makeEntryPoints(zonedDay, entriesForDay);
+
+		if(entryArrayIndex >= 0 && entryArrayIndex < 10){
+			// Make start and end points so renderTimeline knows where to put proper characters (with overlapping points condensed)
+			timelineDays.at(timelineDaysIndex) = {zonedDay, makeTimelineEntryPoints(zonedDay, entriesForDay)};
+			++timelineDaysIndex;
+		}	
 	}
 
-		
-	// Printing of bottom line
-	for(int i { 0 }; i < 101; ++i){
-		std::cout << '_';
-	}
-	std::cout << "\n     ";
+	std::ostringstream timeline { };
+	timeline << renderTimeline(timelineDays, daysToDisplay).str(); 
 
-	// Printing of the times
-	for(int i { 0 }; i < 96; ++i){
-		if(i % 4 == 0)
-			std::cout << '|';
-		else
-			std::cout << ' ';
-	}
-	std::cout << "\n   12am  1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20  21  22  23\n";
-
-	std::cout << '\n';
-		
+	std::cout << timeline.str();
+	
 	return true;
 }
 
@@ -831,9 +830,9 @@ std::chrono::time_point<std::chrono::system_clock> CommandHelper::getBeginningOf
 std::chrono::time_point<std::chrono::system_clock> CommandHelper::getNumDaysAgo(int days, std::chrono::time_point<std::chrono::system_clock> time){
 	return time - std::chrono::days(days);
 }
-std::array<Timeline::FinalEntryPointsInfo, 10> CommandHelper::makeEntryPoints (timepoint day, const std::array<std::pair<int, EntryPtr>, 10>& entries){
+std::array<Timeline::EntryPoints, 10> CommandHelper::makeTimelineEntryPoints (timepoint day, const std::array<Timeline::EntryID, 10>& entries){
 	struct EntryRender{
-		Timeline::EntryPair entryPair {};
+		Timeline::EntryID entryPair {};
 		int start	{ 0 };
 		int end 	{ 0 };
 	};
@@ -851,14 +850,14 @@ std::array<Timeline::FinalEntryPointsInfo, 10> CommandHelper::makeEntryPoints (t
 			int startMulOf15 { (std::chrono::duration_cast<std::chrono::minutes>(entry->getRawStartTime().get_local_time() - zonedDayFloor).count()) / 15 };
 			int endMulOf15 	{ (std::chrono::duration_cast<std::chrono::minutes>(entry->getRawEndTime().get_local_time() - zonedDayFloor).count()) / 15 };
 
-			entryPoints[pointsIndex] = EntryRender{Timeline::EntryPair{ID, entry}, startMulOf15, endMulOf15};
+			entryPoints[pointsIndex] = EntryRender{Timeline::EntryID{ID, entry}, startMulOf15, endMulOf15};
 			++pointsIndex;
 		}
 	}
 	
 
 
-	std::array<Timeline::FinalEntryPointsInfo, 10> finalRenderArray { };
+	std::array<Timeline::EntryPoints, 10> finalRenderArray { };
 	int finalRenderIndex { 0 };
 
  	for( pointsIndex = 0 ; pointsIndex < entryPoints.max_size(); ++pointsIndex){
@@ -867,7 +866,7 @@ std::array<Timeline::FinalEntryPointsInfo, 10> CommandHelper::makeEntryPoints (t
 		if(renderStartEntry.start == 0 && renderStartEntry.end == 0)
 			continue;
 
-		Timeline::FinalEntryPointsInfo finalRenderBuffer { };
+		Timeline::EntryPoints finalRenderBuffer { };
 		int finalRenderBufferIndex { 0 };
 
 		// Copy raw entry into final render array as the start point
@@ -903,33 +902,72 @@ std::array<Timeline::FinalEntryPointsInfo, 10> CommandHelper::makeEntryPoints (t
 		++finalRenderIndex;
 	}
 
+	return finalRenderArray;
+}
+std::ostringstream CommandHelper::renderTimeline(const std::array<Timeline::TimelineDay, MAX_TIMELINE_DAYS>& entries, int daysToDisplay){
+	std::ostringstream os;
+
+	if(daysToDisplay <= 0){
+		os << "Invalid number of days to display [" << daysToDisplay << "]\n";
+		return os;
+	}
+
+	if(daysToDisplay > entries.max_size())
+		daysToDisplay = entries.max_size();
+
 	// Testing
-	for(const auto& final : finalRenderArray){
+	for(int i { 0 }; i < daysToDisplay; ++i){
+		auto timelineDay 	{ entries.at(i) };
+		auto day 		{ std::chrono::floor<std::chrono::days>(std::chrono::zoned_time {std::chrono::current_zone(), timelineDay.day}.get_local_time()) };
 
-		if(final.start == 0 && final.end == 0)
-			continue;
+		os << std::format("{:%a}", day) << " |";
 
-		std::cout << "Final Render:\n";
-		std::cout << "\tStart: " << final.start << "\n";
-		std::cout << "\tEnd: " << final.end << "\n";
-		std::cout << "\tEntries: \n";
+		for(const auto& entry : timelineDay.entries){
 
-		for(const auto& [ID, entry] : final.entries){
-			if(entry)
-				std::cout << "\tID: " << ID << "| Entry: " << entry->getRawStartTime().get_local_time() << "\n";
-		}
+			if(entry.start == 0 && entry.end == 0)
+				continue;
+
+			os << "Final Render:\n";
+			os << "\tStart: " << entry.start << "\n";
+			os << "\tEnd: " << entry.end << "\n";
+			os << "\tEntries: \n";
+
+			for(const auto& [ID, entryPtr] : entry.entries){
+				if(entryPtr)
+					os << "\tID: " << ID << "| Entry: " << entryPtr->getRawStartTime().get_local_time() << "\n";
+			}
+		}	
+		os << "\n";
 	}
 
 
-	std::cout << std::format("{:%a}", zonedDayFloor) << " |";
 
+	/*
 	for(const auto& entryRender : entryPoints)
 		if(entryRender.start > 0 && entryRender.end > 0)
 			std::cout << "\tID: " << entryRender.entryPair.ID << " | Start: " << entryRender.start << " | End: " << entryRender.end << "\n";
+			*/
 
 		
-	std::cout << "\n";
+	os << "\n";	
 
-	return finalRenderArray;
+
+
+	// Printing of bottom line
+	for(int i { 0 }; i < 101; ++i){
+		os << '_';
+	}
+	os << "\n     ";
+
+	// Printing of the times
+	for(int i { 0 }; i < 96; ++i){
+		if(i % 4 == 0)
+			os << '|';
+		else
+			os << ' ';
+	}
+	os << "\n   12am  1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20  21  22  23\n";
+
+	os << '\n';
+	return os;	
 }
-

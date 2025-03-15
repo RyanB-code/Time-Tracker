@@ -162,15 +162,18 @@ namespace TimeTracker{
 		
 		bool execute(const std::vector<std::string>& args) override;
 		
-		struct EntryPair {
+		struct EntryID {
 			int ID { 0 };
 			EntryPtr entry;
 		};
-		struct FinalEntryPointsInfo {
-			std::string ID { "NULL" };
-			std::array<EntryPair, 10> entries;
+		struct EntryPoints {
+			std::array<EntryID, 10> entries;
 			int start { 0 };
 			int end { 0 };
+		};
+		struct TimelineDay{
+			timepoint day { };
+			std::array<EntryPoints, 10> entries;
 		};
 	private:
 		std::weak_ptr<Settings> settings;
@@ -178,6 +181,7 @@ namespace TimeTracker{
 	
 
     namespace CommandHelper{
+	constexpr int MAX_TIMELINE_DAYS { 31 };
         termios enableRawMode();                            // Returns the unmodified terminal attributes
         void disableRawMode(const termios& attributes);     // Applies the parameter attributes to terminal
         void clearRelativeTerminalSection(uint64_t moveUp, uint64_t linesToClear);
@@ -186,6 +190,7 @@ namespace TimeTracker{
 	std::chrono::time_point<std::chrono::system_clock> getBeginningOfWeek(std::chrono::time_point<std::chrono::system_clock> time);
 	std::chrono::time_point<std::chrono::system_clock> getNumDaysAgo(int days, std::chrono::time_point<std::chrono::system_clock> time);
 	
-	std::array<Timeline::FinalEntryPointsInfo, 10> makeEntryPoints (timepoint day, const std::array<std::pair<int, EntryPtr>, 10>& entries);
+	std::array<Timeline::EntryPoints, 10> makeTimelineEntryPoints (timepoint day, const std::array<Timeline::EntryID, 10>& entries);
+	std::ostringstream renderTimeline(const std::array<Timeline::TimelineDay, MAX_TIMELINE_DAYS>& entries, int daysToDisplay);
     }
 }
