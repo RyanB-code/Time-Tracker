@@ -167,13 +167,13 @@ namespace TimeTracker{
 			EntryPtr entry;
 		};
 		struct EntryPoints {
-			std::array<EntryID, 10> entries;
+			std::array<EntryID, 10> entryIDs;
 			int start { 0 };
 			int end { 0 };
 		};
 		struct TimelineDay{
 			timepoint day { };
-			std::array<EntryPoints, 10> entries;
+			std::array<EntryPoints, 10> entryPoints;
 		};
 	private:
 		std::weak_ptr<Settings> settings;
@@ -181,16 +181,18 @@ namespace TimeTracker{
 	
 
     namespace CommandHelper{
+        termios 	enableRawMode			();                            			// Returns the unmodified terminal attributes
+        void 		disableRawMode			(const termios& attributes);     		// Applies the parameter attributes to terminal
+        void 		clearRelativeTerminalSection	(uint64_t moveUp, uint64_t linesToClear);
+
+	// Timeline functions
 	constexpr int MAX_TIMELINE_DAYS { 31 };
-        termios enableRawMode();                            // Returns the unmodified terminal attributes
-        void disableRawMode(const termios& attributes);     // Applies the parameter attributes to terminal
-        void clearRelativeTerminalSection(uint64_t moveUp, uint64_t linesToClear);
-
-
-	std::chrono::time_point<std::chrono::system_clock> getBeginningOfWeek(std::chrono::time_point<std::chrono::system_clock> time);
-	std::chrono::time_point<std::chrono::system_clock> getNumDaysAgo(int days, std::chrono::time_point<std::chrono::system_clock> time);
+	std::chrono::time_point<std::chrono::system_clock> getBeginningOfWeek	(std::chrono::time_point<std::chrono::system_clock> time);
+	std::chrono::time_point<std::chrono::system_clock> getNumDaysAgo	(int days, std::chrono::time_point<std::chrono::system_clock> time);
 	
-	std::array<Timeline::EntryPoints, 10> makeTimelineEntryPoints (timepoint day, const std::array<Timeline::EntryID, 10>& entries);
-	std::ostringstream renderTimeline(const std::array<Timeline::TimelineDay, MAX_TIMELINE_DAYS>& entries, int daysToDisplay);
+	std::array<Timeline::EntryPoints, 10> 	makeTimelineEntryPoints (timepoint day, const std::array<Timeline::EntryID, 10>& entryIDs);
+	std::string 				makeTimelineEntryRender	(char& overlapID, const Timeline::EntryPoints& entryPoint);
+	std::ostringstream 			renderTimeline		(const std::array<Timeline::TimelineDay, MAX_TIMELINE_DAYS>& timelineDays, int daysToDisplay);
+
     }
 }
