@@ -161,15 +161,21 @@ namespace TimeTracker{
 		);
 		
 		bool execute(const std::vector<std::string>& args) override;
+
+		struct EntryPair{
+			EntryPtr 	entry;
+			std::string	projectName;
+		};
 		
 		struct EntryID {
-			int ID { 0 };
-			EntryPtr entry;
+			char ID { '#' };
+			EntryPair entryPair;
 		};
 		struct EntryPoints {
 			std::array<EntryID, 10> entryIDs;
 			int start { 0 };
 			int end { 0 };
+			char ID { '#' };
 		};
 		struct TimelineDay{
 			timepoint day { };
@@ -190,8 +196,8 @@ namespace TimeTracker{
 	std::chrono::time_point<std::chrono::system_clock> getBeginningOfWeek	(std::chrono::time_point<std::chrono::system_clock> time);
 	std::chrono::time_point<std::chrono::system_clock> getNumDaysAgo	(int days, std::chrono::time_point<std::chrono::system_clock> time);
 	
-	std::array<Timeline::EntryPoints, 10> 	makeTimelineEntryPoints (timepoint day, const std::array<Timeline::EntryID, 10>& entryIDs);
-	std::string 				makeTimelineEntryRender	(char& overlapID, const Timeline::EntryPoints& entryPoint);
+	std::array<Timeline::EntryPoints, 10> 	makeTimelineEntryPoints (timepoint day, const std::array<Timeline::EntryID, 10>& entryIDs, char& overlapID);
+	std::string 				makeTimelineEntryRender	(const Timeline::EntryPoints& entryPoint);
 	std::ostringstream 			renderTimeline		(const std::array<Timeline::TimelineDay, MAX_TIMELINE_DAYS>& timelineDays, int daysToDisplay);
 
     }
