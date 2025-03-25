@@ -710,9 +710,9 @@ bool Timeline::execute(const std::vector<std::string>& args){
 			break;
 	}
 
-	// Go through all projects and get all entries before the backstop
+	// Get all entries from projects before the backstop
 	std::vector<std::shared_ptr<const Project>> projects { tempManager->getAllProjects() };
-	std::map<std::chrono::system_clock::time_point, EntryPtr> sortedEntries;
+	std::map<std::chrono::system_clock::time_point, EntryPair> sortedEntries;
 
 	for(const auto& projPtr : projects){
 		const Project& proj { *projPtr};
@@ -722,7 +722,7 @@ bool Timeline::execute(const std::vector<std::string>& args){
 
 		for(const auto& entryPtr : entries){
 			if(entryPtr->getRawStartTime().get_sys_time() > backstop)
-				sortedEntries.try_emplace(std::chrono::time_point{entryPtr->getRawStartTime().get_sys_time()}, entryPtr);
+				sortedEntries.try_emplace(std::chrono::time_point{entryPtr->getRawStartTime().get_sys_time()}, EntryPair{entryPtr, std::string{proj.getName()}} );
 		}
 	}
 	
@@ -734,8 +734,9 @@ bool Timeline::execute(const std::vector<std::string>& args){
 
 	// Loop variables
 	int daysToDisplay { (std::chrono::floor<std::chrono::days>(frontstop) - std::chrono::floor<std::chrono::days>(backstop)).count() }; // Set loop limit
-	int entryID { 1 };
-	std::map<std::chrono::system_clock::time_point, EntryPtr>::iterator itr { sortedEntries.begin() };
+	char entryID { 'A' };
+	char overlapID { 'a' }; // If entries overlap, assign ID starting at A
+	std::map<std::chrono::system_clock::time_point, EntryPair>::iterator itr { sortedEntries.begin() };
 	
 	// Breakdown entries by day
 	for(int i { 1 }; i <= daysToDisplay; ++i){
@@ -749,16 +750,15 @@ bool Timeline::execute(const std::vector<std::string>& args){
 				break;
 
 			const auto zonedDayIndexFloor { std::chrono::floor<std::chrono::days>(zonedDay.get_local_time()) };
-			const auto zonedDayItrFloor { std::chrono::floor<std::chrono::days>(itr->second->getRawStartTime().get_local_time()) };
+			const auto zonedDayItrFloor { std::chrono::floor<std::chrono::days>(itr->second.entry->getRawStartTime().get_local_time()) };
 
 			// If days are the same for the index and the row, add to entriesForDay array
 			// If index floor is less than the itr, increment itr and repeat
 			if(zonedDayIndexFloor > zonedDayItrFloor)
 				++itr;
 			else if(zonedDayIndexFloor == zonedDayItrFloor){
-				entriesForDay[entryArrayIndex] = EntryID{entryID, itr->second};
+				entriesForDay[entryArrayIndex] = EntryID{entryID++, itr->second.entry};
 				++entryArrayIndex;
-				++entryID;
 				++itr;
 			}
 			else	
@@ -767,7 +767,7 @@ bool Timeline::execute(const std::vector<std::string>& args){
 
 		if(entryArrayIndex >= 0 && entryArrayIndex < 10){
 			// Make start and end points so renderTimeline knows where to put proper characters (with overlapping points condensed)
-			timelineDays.at(timelineDaysIndex) = {zonedDay, makeTimelineEntryPoints(zonedDay, entriesForDay)};
+			timelineDays.at(timelineDaysIndex) = {zonedDay, makeTimelineEntryPoints(zonedDay, entriesForDay, overlapID)};
 			++timelineDaysIndex;
 		}	
 	}
@@ -830,7 +830,7 @@ std::chrono::time_point<std::chrono::system_clock> CommandHelper::getBeginningOf
 std::chrono::time_point<std::chrono::system_clock> CommandHelper::getNumDaysAgo(int days, std::chrono::time_point<std::chrono::system_clock> time){
 	return time - std::chrono::days(days);
 }
-std::array<Timeline::EntryPoints, 10> CommandHelper::makeTimelineEntryPoints (timepoint day, const std::array<Timeline::EntryID, 10>& entryIDs){
+std::array<Timeline::EntryPoints, 10> CommandHelper::makeTimelineEntryPoints (timepoint day, const std::array<Timeline::EntryID, 10>& entryIDs, char& overlapID){
 	struct EntryRender{
 		Timeline::EntryID entryPair {};
 		int start	{ 0 };
@@ -844,7 +844,8 @@ std::array<Timeline::EntryPoints, 10> CommandHelper::makeTimelineEntryPoints (ti
 
 	// Determine start and end points for each timer
 	for(int entryIndex { 0 }; entryIndex < entryIDs.max_size(); ++entryIndex){
-		const auto& [ID, entry] {entryIDs.at(entryIndex)};
+		const auto& [ID, ownedEntry] {entryIDs.at(entryIndex)};
+		const auto& entry { ownedEntry.entry };
 
 		if(entry){
 			int startMulOf15 { (std::chrono::duration_cast<std::chrono::minutes>(entry->getRawStartTime().get_local_time() - zonedDayFloor).count()) / 15 };
@@ -872,6 +873,7 @@ std::array<Timeline::EntryPoints, 10> CommandHelper::makeTimelineEntryPoints (ti
 		// Copy raw entry into final render array as the start point
 		finalRenderBuffer.entryIDs.at(finalRenderBufferIndex) = renderStartEntry.entryPair;
 		finalRenderBuffer.start = renderStartEntry.start;
+		finalRenderBuffer.ID = renderStartEntry.entryPair.ID;		// Set initial ID for the entry
 		
 
 		// See if next point's start overlaps with current's end, add if they do
@@ -886,9 +888,10 @@ std::array<Timeline::EntryPoints, 10> CommandHelper::makeTimelineEntryPoints (ti
 			// If they overlap, add to the finalRenderBuffer's array.
 			// Continue until end < start of next entry
 			if(renderBufferEnd >= compareEntry.start){
-				finalRenderBuffer.entryIDs.at(++finalRenderBufferIndex) = compareEntry.entryPair;
+				finalRenderBuffer.ID = overlapID++;							// Increment and assign overlap ID
+				finalRenderBuffer.entryIDs.at(++finalRenderBufferIndex) = compareEntry.entryPair;	// Add raw entry to list of entries in the overlap
 				++finalRenderBufferIndex;
-				renderBufferEnd = compareEntry.end;
+				renderBufferEnd = compareEntry.end;	// Set endpoint
 			}
 			else
 				break;
@@ -906,6 +909,8 @@ std::array<Timeline::EntryPoints, 10> CommandHelper::makeTimelineEntryPoints (ti
 }
 std::ostringstream CommandHelper::renderTimeline(const std::array<Timeline::TimelineDay, MAX_TIMELINE_DAYS>& timelineDays, int daysToDisplay){
 	std::ostringstream os;
+	int timelineWidth 	{ 96 };	// Width of entire table
+	int labelWidth		{ 5 };	// Width of labels for each day
 
 	if(daysToDisplay <= 0){
 		os << "Invalid number of days to display [" << daysToDisplay << "]\n";
@@ -915,96 +920,89 @@ std::ostringstream CommandHelper::renderTimeline(const std::array<Timeline::Time
 	if(daysToDisplay > timelineDays.max_size())
 		daysToDisplay = timelineDays.max_size();
 
-	char overlapID { 'A' }; // If entries overlap, assign ID starting at A
 	for(int i { 0 }; i < daysToDisplay; ++i){
 		auto timelineDay 	{ timelineDays.at(i) };
 		auto day 		{ std::chrono::floor<std::chrono::days>(std::chrono::zoned_time {std::chrono::current_zone(), timelineDay.day}.get_local_time()) };
 
 		os << std::format("{:%a}", day) << " |";
 
-		for(const auto& entryPoint : timelineDay.entryPoints){
+		int entryPointIndex { 0 };	
 
-			if(entryPoint.start == 0 && entryPoint.end == 0)
+		// Early continue if there are no entries for that day
+		if(timelineDay.entryPoints.at(entryPointIndex).start == 0 && timelineDay.entryPoints.at(entryPointIndex).end == 0){
+			os << '\n';
+			continue;
+		}
+
+		// Plot initial point		
+		int charPosition { 0 };
+		for( ; charPosition < timelineWidth; ++charPosition){
+			if(entryPointIndex >= timelineDays.max_size())
+				break;
+
+			Timeline::EntryPoints& entryPoint { timelineDay.entryPoints.at(entryPointIndex) };	
+
+			if(charPosition == entryPoint.start){
+				std::string render { CommandHelper::makeTimelineEntryRender(entryPoint) };
+				os << render << ' ';
+					
+				charPosition += render.size();
+				++entryPointIndex;	
 				continue;
-
-			os << CommandHelper::makeTimelineEntryRender(overlapID, entryPoint) << " | ";
-
-
-			// Need to do spacing still
-			
-			os << "\n\n";
-			os << "Final Render:\n";
-			os << "\tStart: " << entryPoint.start << "\n";
-			os << "\tEnd: " << entryPoint.end << "\n";
-			os << "\tEntries: \n";
-			for(const auto& [ID, entryPtr] : entryPoint.entryIDs){
-				if(entryPtr)
-					os << "\tID: " << ID << "| Entry: " << entryPtr->getRawStartTime().get_local_time() << "\n";
 			}
-		}	
-		os << "\n";	
+
+			os << ' ';
+		}
+		os << "\n";
 	}	
-		
-	os << "\n";	
 
 	// Printing of bottom line
-	for(int i { 0 }; i < 101; ++i){
+	for(int i { 0 }; i < timelineWidth + labelWidth; ++i){
 		os << '_';
 	}
 	os << "\n     ";
 
 	// Printing of the times
-	for(int i { 0 }; i < 96; ++i){
+	for(int i { 0 }; i < timelineWidth; ++i){
 		if(i % 4 == 0)
 			os << '|';
 		else
 			os << ' ';
 	}
-	os << "\n   12am  1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20  21  22  23\n";
+	os << "\n   12am  1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20  21  22  23\n\n";
 
-	os << '\n';
+	// Prints bottom information
+	for(int i { 0 }; i < daysToDisplay; ++i){
+		for(const auto& entryPoint : timelineDays.at(i).entryPoints){
+		
+			if(entryPoint.start == 0 && entryPoint.end == 0)
+				continue;
+
+			os << "\n\n";
+			os << "Final Render:\n";
+			os << "\tStart: " << entryPoint.start << "\n";
+			os << "\tEnd: " << entryPoint.end << "\n";
+			os << "\tEntries: \n";
+			for(const auto& [ID, entryPair] : entryPoint.entryIDs){
+				if(entryPair.entry)
+					os << "\tID: " << ID << "| Entry: " << entryPair.entry->getRawStartTime().get_local_time() << "\n";
+			}
+		}	
+	}
+	
 	return os;	
 }
-std::string CommandHelper::makeTimelineEntryRender	(char& overlapID, const Timeline::EntryPoints& entryPoint){
+std::string CommandHelper::makeTimelineEntryRender	(const Timeline::EntryPoints& entryPoint){
 	if(entryPoint.start == 0 && entryPoint.end == 0)
 		return std::string{"Invalid EntryPoint"};
 
 	int span { entryPoint.end - entryPoint.start };
-
-	// See if there is more than one entry
-	bool moreThanOneEntry 	{ false };
-	bool oneEntryFound	{ false };
-	int singleEntryID { 0 };
-
-	for(const auto& entryID : entryPoint.entryIDs){
-		if (!entryID.entry)
-			continue;
-		
-		if(entryID.entry && !oneEntryFound){
-			oneEntryFound = true;
-			singleEntryID = entryID.ID;
-			continue;
-		}
-
-		if( oneEntryFound ){
-			moreThanOneEntry = true;
-			break;
-		}
-	}
+	std::string ID { entryPoint.ID };
 
 	// Format the entry to output
 	// subtract two for the [ ] spacing
 	// Span == 0 means start and end are the same, so that is one space
 	
-	std::string ID;
-
-	if(moreThanOneEntry){
-		ID = overlapID;
-		++overlapID;
-	}
-	else
-		ID = std::to_string(singleEntryID);
-
 	switch(span){
 		case 0:
 			return ID;
